@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROF - Rate of Fire</title>
+    <link rel="stylesheet" href="style.css"> <style>
+        body { font-family: sans-serif; background: #fafafa; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        header { background: #fff; width: 100%; text-align: center; border-bottom: 1px solid #dbdbdb; padding: 10px 0; position: sticky; top: 0; }
+        .container { max-width: 500px; width: 100%; padding: 20px; }
+        .post-form { background: white; padding: 15px; border: 1px solid #dbdbdb; margin-bottom: 20px; }
+        .post-form input { width: 95%; padding: 10px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 4px; }
+        .post-form button { background: #0095f6; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .card { background: white; border: 1px solid #dbdbdb; margin-bottom: 20px; border-radius: 3px; }
+        .card img { width: 100%; display: block; }
+        .card-content { padding: 15px; }
+        .like-btn { cursor: pointer; color: #ed4956; font-size: 1.2rem; border: none; background: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>ROF</h1>
+</header>
+
+<div class="container">
+    <div class="post-form">
+        <h3>Yeni Gönderi Paylaş</h3>
+        <input type="text" id="postImageUrl" placeholder="Fotoğraf URL'si yapıştır...">
+        <input type="text" id="postCaption" placeholder="Bir açıklama yaz...">
+        <button id="postBtn">Ateşle (Paylaş)</button>
+    </div>
+
+    <div id="feed"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
+    authDomain: "rate-of-fire-rof.firebaseapp.com",
+    projectId: "rate-of-fire-rof",
+    storageBucket: "rate-of-fire-rof.firebasestorage.app",
+    messagingSenderId: "706117316470",
+    appId: "1:706117316470:web:833f1abf5994f96c0b5457"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // GÖNDERİ PAYLAŞMA
+  const postBtn = document.getElementById('postBtn');
+  postBtn.addEventListener('click', async () => {
+    const url = document.getElementById('postImageUrl').value;
+    const caption = document.getElementById('postCaption').value;
+
+    if(url && caption) {
+        await addDoc(collection(db, "posts"), {
+            imageUrl: url,
+            caption: caption,
+            likes: 0,
+            timestamp: new Date()
+        });
+        document.getElementById('postImageUrl').value = "";
+        document.getElementById('postCaption').value = "";
+    } else {
+        alert("Lütfen tüm alanları doldur!");
+    }
+  });
+
+  // AKIŞI LİSTELEME (Real-time)
+  const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+  onSnapshot(q, (snapshot) => {
+    const feed = document.getElementById('feed');
+    feed.innerHTML = "";
+    snapshot.forEach((docSnap) => {
+        const post = docSnap.data();
+        const postId = docSnap.id;
+        
+        feed.innerHTML += `
+            <div class="card">
+                <img src="${post.imageUrl}" alt="post">
+                <div class="card-content">
+                    <button class="like-btn" onclick="likePost('${postId}')">❤️ ${post.likes}</button>
+                    <p><strong>Kullanıcı</strong> ${post.caption}</p>
+                </div>
+            </div>
+        `;
+    });
+  });
+
+  // BEĞENİ ATMA (Global fonksiyon yapmamız gerek)
+  window.likePost = async (id) => {
+    const postRef = doc(db, "posts", id);
+    await updateDoc(postRef, {
+        likes: increment(1)
+    });
+  };
+
+</script>
+</body>
+</html>
