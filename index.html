@@ -1,124 +1,88 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ROF FINAL</title>
+    <title>ROF - STABLE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background: #fafafa; }
-        .app-container { max-width: 500px; margin: 0 auto; background: white; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); padding-bottom: 70px; }
-        .story-gradient { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); padding: 3px; border-radius: 50%; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 500px; background: white; border-top: 1px solid #dbdbdb; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; z-index: 50; }
-        .nav-btn { font-size: 24px; color: #262626; padding: 10px; }
-        .active-nav { color: #dc2743; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: center; justify-content: center; }
+        body { background: #fafafa; font-family: system-ui, sans-serif; }
+        .app-shell { max-width: 500px; margin: 0 auto; background: white; min-height: 100vh; padding-bottom: 70px; border-x: 1px solid #eee; }
         .view { display: none; }
         .view.active { display: block; }
-        /* Scrollbar gizle */
+        .nav-btn.active { color: #dc2626; }
+        .story-ring { background: linear-gradient(45deg, #FFD700, #FF0000, #800080); padding: 2px; border-radius: 50%; }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-shell">
 
-    <header class="sticky top-0 bg-white/95 backdrop-blur z-40 border-b px-4 py-3 flex justify-between items-center">
-        <h1 class="text-2xl font-black italic text-red-600 tracking-tighter cursor-pointer" onclick="goHome()">ROF</h1>
-        <div class="flex gap-4">
-            <i class="fa-regular fa-heart text-2xl"></i>
-            <i class="fa-regular fa-paper-plane text-2xl"></i>
+    <header class="sticky top-0 bg-white/95 backdrop-blur z-50 border-b p-3 flex justify-between items-center">
+        <h1 class="text-2xl font-black italic text-red-600 tracking-tighter" onclick="showTab('home')">ROF</h1>
+        <div class="flex gap-4 text-xl">
+            <i class="fa-regular fa-heart"></i>
+            <i class="fa-regular fa-paper-plane"></i>
         </div>
     </header>
 
-    <section id="home-view" class="view active">
-        <div class="flex gap-4 p-4 overflow-x-auto border-b bg-white">
-            <div class="flex flex-col items-center min-w-[70px] cursor-pointer" onclick="alert('Hikaye ekleme yakında!')">
-                <div class="story-gradient relative">
-                    <img id="my-story-avatar" src="https://via.placeholder.com/60" class="w-[60px] h-[60px] rounded-full border-2 border-white object-cover">
-                    <div class="absolute bottom-0 right-0 bg-blue-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs border-2 border-white">+</div>
-                </div>
-                <span class="text-xs mt-1 truncate w-full text-center">Hikayen</span>
-            </div>
-            <div class="flex flex-col items-center min-w-[70px]">
-                <div class="story-gradient"><img src="https://i.pravatar.cc/150?img=12" class="w-[60px] h-[60px] rounded-full border-2 border-white"></div>
-                <span class="text-xs mt-1">rof_team</span>
+    <div id="view-home" class="view active">
+        <div class="flex gap-4 p-3 overflow-x-auto border-b bg-gray-50">
+            <div class="flex flex-col items-center min-w-[64px]">
+                <div class="story-ring bg-white"><img id="my-story" src="" class="w-14 h-14 rounded-full border-2 border-white object-cover"></div>
+                <span class="text-[10px] mt-1 text-gray-500">Hikayen</span>
             </div>
         </div>
 
-        <div class="p-4 border-b flex gap-3">
-            <img id="quick-post-avatar" src="" class="w-10 h-10 rounded-full bg-gray-200">
-            <div class="flex-1">
-                <textarea id="quick-text" placeholder="Neler oluyor?" class="w-full outline-none resize-none text-lg mt-1" rows="1"></textarea>
+        <div class="p-3 border-b flex gap-3">
+            <img id="post-avatar" src="" class="w-10 h-10 rounded-full bg-gray-200">
+            <div class="w-full">
+                <textarea id="quick-text" placeholder="Neler oluyor?" class="w-full outline-none text-lg resize-none mt-2" rows="2"></textarea>
                 <div class="flex justify-between items-center mt-2">
-                    <i class="fa-regular fa-image text-red-500 text-xl cursor-pointer" onclick="document.getElementById('post-modal').style.display='flex'"></i>
-                    <button onclick="sendPost('quick')" class="bg-red-500 text-white px-4 py-1.5 rounded-full font-bold text-sm">Paylaş</button>
+                    <i class="fa-regular fa-image text-red-500 text-xl"></i>
+                    <button onclick="sendPost()" class="bg-red-600 text-white px-5 py-1.5 rounded-full font-bold text-sm">Paylaş</button>
                 </div>
             </div>
         </div>
 
-        <div id="feed-container" class="pb-4"></div>
-    </section>
+        <div id="feed" class="pb-10"></div>
+    </div>
 
-    <section id="explore-view" class="view">
-        <div class="p-2 sticky top-[60px] bg-white z-30">
+    <div id="view-explore" class="view">
+        <div class="p-3 bg-white sticky top-[60px] z-40">
             <div class="bg-gray-100 p-2 rounded-xl flex items-center">
-                <i class="fa fa-search text-gray-400 ml-2"></i>
-                <input type="text" onkeyup="searchUser(this.value)" placeholder="Ara..." class="bg-transparent w-full p-1 outline-none ml-2">
+                <i class="fa fa-search text-gray-400 mx-2"></i>
+                <input type="text" onkeyup="searchUsers(this.value)" placeholder="Kullanıcı ara..." class="bg-transparent w-full outline-none">
             </div>
         </div>
-        <div id="search-results" class="bg-white absolute w-full z-50 shadow-lg hidden"></div>
-        <div id="explore-grid" class="grid grid-cols-3 gap-0.5 mt-2">
-            </div>
-    </section>
+        <div id="search-results" class="bg-white"></div>
+        <div id="explore-grid" class="grid grid-cols-3 gap-0.5 mt-2"></div>
+    </div>
 
-    <section id="profile-view" class="view">
-        <div id="profile-content" class="p-4">
-            </div>
-    </section>
+    <div id="view-profile" class="view">
+        <div id="profile-container" class="p-4">
+            <div class="text-center mt-10 text-gray-400">Yükleniyor...</div>
+        </div>
+    </div>
 
-    <nav class="nav-bar">
-        <button class="nav-btn active-nav" onclick="switchTab('home-view', this)"><i class="fa-solid fa-house"></i></button>
-        <button class="nav-btn" onclick="switchTab('explore-view', this)"><i class="fa-solid fa-magnifying-glass"></i></button>
-        <button class="nav-btn" onclick="openPostModal()"><i class="fa-regular fa-square-plus text-3xl"></i></button> <button class="nav-btn" onclick="alert('Reels yakında!')"><i class="fa-solid fa-clapperboard"></i></button>
-        <button class="nav-btn" onclick="loadMyProfile()"><img id="nav-avatar" src="" class="w-6 h-6 rounded-full border border-gray-300"></button>
+    <nav class="fixed bottom-0 w-full max-w-[500px] bg-white border-t flex justify-around items-center p-3 z-50">
+        <button onclick="showTab('home', this)" class="nav-btn active"><i class="fa-solid fa-house text-2xl"></i></button>
+        <button onclick="showTab('explore', this)" class="nav-btn"><i class="fa-solid fa-magnifying-glass text-2xl"></i></button>
+        <button onclick="document.getElementById('quick-text').focus(); showTab('home')" class="nav-btn text-red-600"><i class="fa-regular fa-square-plus text-3xl"></i></button>
+        <button onclick="alert('Reels çok yakında!')" class="nav-btn"><i class="fa-solid fa-clapperboard text-2xl"></i></button>
+        <button onclick="loadMyProfile()" class="nav-btn"><img id="nav-avatar" src="" class="w-6 h-6 rounded-full border border-gray-300"></button>
     </nav>
 
-</div>
-
-<div id="post-modal" class="modal">
-    <div class="bg-white w-[90%] rounded-xl p-4 shadow-2xl">
-        <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <span class="font-bold">Yeni Gönderi</span>
-            <button onclick="document.getElementById('post-modal').style.display='none'" class="text-red-500 font-bold">İptal</button>
-        </div>
-        <textarea id="modal-text" class="w-full p-2 outline-none text-lg resize-none" rows="3" placeholder="Açıklama yaz..."></textarea>
-        <input type="text" id="modal-img" class="w-full bg-gray-100 p-2 rounded mb-4 text-sm" placeholder="Resim URL'si (İsteğe bağlı)">
-        <button onclick="sendPost('modal')" class="w-full bg-blue-500 text-white py-2 rounded-lg font-bold">Paylaş</button>
-    </div>
-</div>
-
-<div id="comment-modal" class="modal" style="align-items: flex-end;">
-    <div class="bg-white w-full h-[70vh] rounded-t-2xl p-4 shadow-2xl flex flex-col">
-        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-        <h3 class="font-bold text-center border-b pb-2 mb-2">Yorumlar</h3>
-        <div id="comments-list" class="flex-1 overflow-y-auto space-y-3 mb-2"></div>
-        <div class="flex gap-2 border-t pt-2">
-            <input type="text" id="comment-input" class="w-full bg-gray-100 rounded-full px-4 py-2 outline-none" placeholder="Yorum ekle...">
-            <button id="send-comment-btn" class="text-blue-500 font-bold px-2">Paylaş</button>
-        </div>
-        <button onclick="document.getElementById('comment-modal').style.display='none'" class="absolute top-4 right-4 text-gray-500">X</button>
-    </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-    // --- YAPILANDIRMA ---
+    // --- AYARLAR ---
     const firebaseConfig = {
         apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
         authDomain: "rate-of-fire-rof.firebaseapp.com",
@@ -134,253 +98,206 @@
     const provider = new GoogleAuthProvider();
     let currentUserData = null;
 
-    // --- KULLANICI YÖNETİMİ ---
+    // --- GİRİŞ & BOZUK HESAP TEMİZLİĞİ ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const ref = doc(db, "users", user.uid);
             const snap = await getDoc(ref);
+
+            // 1. Durum: Hesap Veritabanında Yoksa (Oluştur)
             if (!snap.exists()) {
-                await setDoc(ref, {
-                    uid: user.uid,
-                    name: user.displayName,
-                    username: "@" + user.displayName.replace(/\s/g, '').toLowerCase(),
-                    photo: user.photoURL,
-                    bio: "ROF'a hoş geldin!",
-                    followers: [],
-                    following: []
-                });
+                await createNewUser(user);
+            } 
+            // 2. Durum: Hesap Var Ama Veriler Bozuksa (SİL VE YENİDEN OLUŞTUR)
+            else {
+                const data = snap.data();
+                if (!data.uid || !data.name || data.name === "undefined") {
+                    console.log("BOZUK HESAP TESPİT EDİLDİ: İMHA EDİLİYOR...");
+                    await deleteDoc(ref); // Veritabanından sil
+                    await deleteUser(user); // Auth'dan sil
+                    alert("Hesap verileriniz bozuktu. Güvenlik için hesap silindi. Lütfen tekrar giriş yapın, her şey düzelecek.");
+                    location.reload();
+                    return;
+                }
+                currentUserData = data;
+                initUI(data);
             }
-            currentUserData = (await getDoc(ref)).data();
-            updateUI(user);
         } else {
             signInWithPopup(auth, provider);
         }
     });
 
-    function updateUI(user) {
-        document.getElementById('my-story-avatar').src = user.photoURL;
-        document.getElementById('quick-post-avatar').src = user.photoURL;
-        document.getElementById('nav-avatar').src = user.photoURL;
+    async function createNewUser(user) {
+        const username = "@" + user.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random()*100);
+        const newUser = {
+            uid: user.uid,
+            name: user.displayName,
+            username: username,
+            photo: user.photoURL,
+            bio: "ROF Dünyasına Hoş Geldin!",
+            followers: [],
+            following: []
+        };
+        await setDoc(doc(db, "users", user.uid), newUser);
+        currentUserData = newUser;
+        initUI(newUser);
+    }
+
+    function initUI(data) {
+        document.getElementById('my-story').src = data.photo;
+        document.getElementById('post-avatar').src = data.photo;
+        document.getElementById('nav-avatar').src = data.photo;
         loadFeed();
     }
 
-    // --- PAYLAŞIM (POST) ---
-    window.openPostModal = () => document.getElementById('post-modal').style.display = 'flex';
-    
-    window.sendPost = async (source) => {
-        const textId = source === 'quick' ? 'quick-text' : 'modal-text';
-        const imgId = source === 'quick' ? null : 'modal-img';
-        
-        const text = document.getElementById(textId).value;
-        const img = imgId ? document.getElementById(imgId).value : null;
+    // --- PAYLAŞIM ---
+    window.sendPost = async () => {
+        const txt = document.getElementById('quick-text').value;
+        if (!txt) return;
 
-        if (!text && !img) return alert("Boş gönderi atamazsın!");
-
-        try {
-            await addDoc(collection(db, "posts"), {
-                uid: auth.currentUser.uid,
-                name: currentUserData.name,
-                username: currentUserData.username,
-                photo: currentUserData.photo,
-                text: text,
-                image: img || null,
-                likes: [],
-                comments: [],
-                timestamp: serverTimestamp()
-            });
-            
-            document.getElementById(textId).value = "";
-            if(imgId) document.getElementById(imgId).value = "";
-            document.getElementById('post-modal').style.display = 'none';
-        } catch (e) {
-            alert("Hata: " + e.message);
-        }
+        await addDoc(collection(db, "posts"), {
+            uid: auth.currentUser.uid,
+            name: currentUserData.name,
+            photo: currentUserData.photo,
+            username: currentUserData.username,
+            text: txt,
+            image: null,
+            likes: [],
+            timestamp: serverTimestamp()
+        });
+        document.getElementById('quick-text').value = "";
+        alert("Gönderildi!");
     };
 
-    // --- AKIŞ (FEED) ---
+    // --- AKIŞ ---
     function loadFeed() {
         const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const feed = document.getElementById('feed-container');
+        onSnapshot(q, (snaps) => {
+            const feed = document.getElementById('feed');
             const grid = document.getElementById('explore-grid');
-            feed.innerHTML = "";
-            grid.innerHTML = "";
+            feed.innerHTML = ""; grid.innerHTML = "";
 
-            snapshot.forEach(docSnap => {
-                const p = docSnap.data();
-                const id = docSnap.id;
-                const isLiked = p.likes.includes(auth.currentUser.uid);
+            snaps.forEach(s => {
+                const p = s.data();
+                const id = s.id;
+                const isLiked = p.likes && p.likes.includes(auth.currentUser.uid);
 
-                // Feed Kartı
                 feed.innerHTML += `
-                <div class="bg-white border-b pb-4 mb-2">
-                    <div class="flex justify-between items-center p-3">
-                        <div class="flex items-center gap-2 cursor-pointer" onclick="openProfile('${p.uid}')">
-                            <img src="${p.photo}" class="w-8 h-8 rounded-full border">
+                    <div class="bg-white border-b p-3">
+                        <div class="flex items-center gap-2 mb-2 cursor-pointer" onclick="openProfile('${p.uid}')">
+                            <img src="${p.photo}" class="w-9 h-9 rounded-full border">
                             <div>
-                                <p class="font-bold text-sm leading-none">${p.name}</p>
-                                <p class="text-xs text-gray-500">${p.username}</p>
+                                <b class="text-sm block leading-tight">${p.name}</b>
+                                <span class="text-xs text-gray-500">${p.username || '@kullanici'}</span>
                             </div>
                         </div>
-                        <i class="fa fa-ellipsis-h text-gray-400"></i>
-                    </div>
-                    ${p.image ? `<img src="${p.image}" class="w-full max-h-[500px] object-cover bg-gray-100">` : ''}
-                    <div class="px-3 pt-3">
-                        <div class="flex gap-4 text-2xl mb-2">
-                            <button onclick="toggleLike('${id}', ${isLiked})" class="${isLiked ? 'text-red-500' : 'text-black'}"><i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i></button>
-                            <button onclick="openComments('${id}')"><i class="fa-regular fa-comment"></i></button>
-                            <button><i class="fa-regular fa-paper-plane"></i></button>
+                        <p class="text-sm text-gray-800 mb-2">${p.text}</p>
+                        ${p.image ? `<img src="${p.image}" class="w-full rounded-lg mb-2">` : ''}
+                        <div class="flex gap-5 text-gray-600">
+                            <button onclick="toggleLike('${id}', ${isLiked})" class="${isLiked ? 'text-red-600' : ''}">
+                                <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i> ${p.likes ? p.likes.length : 0}
+                            </button>
+                            <button><i class="fa-regular fa-comment"></i></button>
                         </div>
-                        <p class="font-bold text-sm mb-1">${p.likes.length} beğenme</p>
-                        <p class="text-sm"><span class="font-bold mr-1">${p.name}</span>${p.text}</p>
-                        <p class="text-gray-400 text-xs mt-1 cursor-pointer" onclick="openComments('${id}')">${p.comments.length} yorumun tümünü gör</p>
                     </div>
-                </div>`;
+                `;
 
-                // Keşfet Grid
-                if(p.image) {
-                    grid.innerHTML += `<img src="${p.image}" class="aspect-square object-cover w-full cursor-pointer hover:opacity-90" onclick="alert('Gönderiye git!')">`;
+                if (p.image) {
+                    grid.innerHTML += `<img src="${p.image}" class="aspect-square object-cover w-full">`;
                 }
             });
         });
     }
 
-    // --- BEĞENİ & YORUM ---
-    window.toggleLike = async (id, isLiked) => {
+    window.toggleLike = async (id, status) => {
         const ref = doc(db, "posts", id);
-        await updateDoc(ref, { likes: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) });
+        if(status) await updateDoc(ref, {likes: arrayRemove(auth.currentUser.uid)});
+        else await updateDoc(ref, {likes: arrayUnion(auth.currentUser.uid)});
     };
 
-    window.openComments = async (postId) => {
-        document.getElementById('comment-modal').style.display = 'flex';
-        const list = document.getElementById('comments-list');
-        const btn = document.getElementById('send-comment-btn');
-        
-        // Yorumları dinle
-        onSnapshot(doc(db, "posts", postId), (docSnap) => {
-            const data = docSnap.data();
-            list.innerHTML = "";
-            data.comments.forEach(c => {
-                list.innerHTML += `<div class="text-sm mb-2"><span class="font-bold mr-2">${c.user}</span>${c.text}</div>`;
-            });
-        });
+    // --- PROFİL SİSTEMİ (Düzeltildi) ---
+    window.loadMyProfile = () => openProfile(auth.currentUser.uid);
 
-        // Yorum at
-        btn.onclick = async () => {
-            const val = document.getElementById('comment-input').value;
-            if(!val) return;
-            await updateDoc(doc(db, "posts", postId), {
-                comments: arrayUnion({ user: currentUserData.name, text: val, uid: auth.currentUser.uid })
+    window.openProfile = async (targetUid) => {
+        showTab('profile');
+        const container = document.getElementById('profile-container');
+        container.innerHTML = '<div class="text-center mt-10">Veriler çekiliyor...</div>';
+
+        try {
+            const uSnap = await getDoc(doc(db, "users", targetUid));
+            if (!uSnap.exists()) return container.innerHTML = "Kullanıcı bulunamadı!";
+            
+            const u = uSnap.data();
+            const isMe = targetUid === auth.currentUser.uid;
+            
+            // Postları say
+            const q = query(collection(db, "posts"), where("uid", "==", targetUid));
+            const pSnaps = await getDocs(q);
+
+            container.innerHTML = `
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="${u.photo}" class="w-20 h-20 rounded-full border p-1">
+                    <div class="flex-1 flex justify-around text-center">
+                        <div><b>${pSnaps.size}</b><br><span class="text-xs">Post</span></div>
+                        <div><b>${u.followers ? u.followers.length : 0}</b><br><span class="text-xs">Takipçi</span></div>
+                        <div><b>${u.following ? u.following.length : 0}</b><br><span class="text-xs">Takip</span></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h2 class="font-bold text-lg">${u.name}</h2>
+                    <p class="text-xs text-gray-500 mb-1">${u.username}</p>
+                    <p class="text-sm">${u.bio}</p>
+                </div>
+                <div class="flex gap-2">
+                    ${isMe ? 
+                        `<button onclick="alert('Düzenleme')" class="bg-gray-200 flex-1 py-1.5 rounded font-bold text-sm">Profili Düzenle</button>
+                         <button onclick="handleLogout()" class="bg-gray-200 px-3 py-1.5 rounded"><i class="fa-solid fa-right-from-bracket"></i></button>` 
+                        : `<button class="bg-blue-500 text-white flex-1 py-1.5 rounded font-bold text-sm">Takip Et</button>`
+                    }
+                </div>
+                <div class="border-t mt-4 pt-2 grid grid-cols-3 gap-0.5" id="user-posts-grid"></div>
+            `;
+            
+            const grid = document.getElementById('user-posts-grid');
+            pSnaps.forEach(p => {
+                if(p.data().image) grid.innerHTML += `<img src="${p.data().image}" class="aspect-square object-cover w-full">`;
             });
-            document.getElementById('comment-input').value = "";
-        };
+
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = "Profil yüklenirken hata oluştu: " + error.message;
+        }
     };
 
-    // --- ARAMA & PROFİL ---
-    window.searchUser = async (val) => {
-        const resDiv = document.getElementById('search-results');
-        if(val.length < 1) { resDiv.style.display = "none"; return; }
+    // --- ARAMA ---
+    window.searchUsers = async (val) => {
+        const res = document.getElementById('search-results');
+        if(val.length < 1) { res.innerHTML = ""; return; }
         
         const q = query(collection(db, "users"), where("name", ">=", val), where("name", "<=", val + '\uf8ff'));
         const snaps = await getDocs(q);
-        
-        resDiv.innerHTML = "";
-        resDiv.style.display = "block";
+        res.innerHTML = "";
         snaps.forEach(s => {
             const u = s.data();
-            resDiv.innerHTML += `
-                <div class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b" onclick="openProfile('${u.uid}')">
+            res.innerHTML += `
+                <div onclick="openProfile('${u.uid}')" class="flex items-center gap-3 p-3 border-b hover:bg-gray-50">
                     <img src="${u.photo}" class="w-10 h-10 rounded-full">
-                    <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs text-gray-500">${u.username}</p></div>
+                    <div><b class="text-sm">${u.name}</b><br><span class="text-xs text-gray-500">${u.username}</span></div>
                 </div>`;
         });
     };
 
-    window.openProfile = async (uid) => {
-        switchTab('profile-view');
-        const userRef = doc(db, "users", uid);
-        const uSnap = await getDoc(userRef);
-        const u = uSnap.data();
-        const isMe = uid === auth.currentUser.uid;
-        const isFollowing = currentUserData.following.includes(uid);
+    window.handleLogout = () => signOut(auth).then(()=>location.reload());
 
-        // Grid için kullanıcının postlarını çek
-        const q = query(collection(db, "posts"), where("uid", "==", uid), orderBy("timestamp", "desc"));
-        const postSnaps = await getDocs(q);
-        let postGridHTML = "";
-        let postCount = 0;
-        postSnaps.forEach(p => {
-            postCount++;
-            const pd = p.data();
-            if(pd.image) postGridHTML += `<img src="${pd.image}" class="aspect-square object-cover w-full">`;
-        });
-
-        document.getElementById('profile-content').innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="font-bold text-xl">${u.username}</h2>
-                ${isMe ? `<button onclick="showSettings()" class="text-2xl"><i class="fa-solid fa-bars"></i></button>` : ''}
-            </div>
-            <div class="flex items-center gap-6 mb-4">
-                <img src="${u.photo}" class="w-20 h-20 rounded-full border p-1">
-                <div class="flex gap-4 text-center flex-1">
-                    <div><b class="block text-lg">${postCount}</b><span class="text-xs">Post</span></div>
-                    <div><b class="block text-lg">${u.followers.length}</b><span class="text-xs">Takipçi</span></div>
-                    <div><b class="block text-lg">${u.following.length}</b><span class="text-xs">Takip</span></div>
-                </div>
-            </div>
-            <div class="mb-4">
-                <p class="font-bold">${u.name}</p>
-                <p class="text-sm">${u.bio}</p>
-            </div>
-            <div class="flex gap-2 mb-6">
-                ${isMe 
-                    ? `<button onclick="editProfile()" class="bg-gray-200 flex-1 py-1.5 rounded-lg font-bold text-sm">Profili Düzenle</button>`
-                    : `<button onclick="followUser('${uid}', ${isFollowing})" class="${isFollowing ? 'bg-gray-200 text-black' : 'bg-blue-500 text-white'} flex-1 py-1.5 rounded-lg font-bold text-sm">${isFollowing ? 'Takiptesin' : 'Takip Et'}</button>`
-                }
-            </div>
-            <div class="border-t pt-2 grid grid-cols-3 gap-0.5">${postGridHTML}</div>
-        `;
-    };
-
-    window.followUser = async (targetUid, isFollowing) => {
-        const myRef = doc(db, "users", auth.currentUser.uid);
-        const targetRef = doc(db, "users", targetUid);
-        
-        if(isFollowing) {
-            await updateDoc(myRef, { following: arrayRemove(targetUid) });
-            await updateDoc(targetRef, { followers: arrayRemove(auth.currentUser.uid) });
-        } else {
-            await updateDoc(myRef, { following: arrayUnion(targetUid) });
-            await updateDoc(targetRef, { followers: arrayUnion(auth.currentUser.uid) });
-        }
-        // Sayfayı yenilemeden verileri güncellemek için tekrar profili açıyoruz
-        currentUserData = (await getDoc(myRef)).data(); 
-        openProfile(targetUid);
-    };
-
-    window.loadMyProfile = () => openProfile(auth.currentUser.uid);
-    window.showSettings = () => {
-        if(confirm("Çıkış Yapılsın mı?")) signOut(auth).then(()=>location.reload());
-    };
-    window.editProfile = async () => {
-        const bio = prompt("Yeni bio:");
-        if(bio) {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: bio });
-            loadMyProfile();
-        }
-    };
-    window.goHome = () => switchTab('home-view', document.querySelector('.nav-btn'));
-
-    window.switchTab = (id, el) => {
+    window.showTab = (id, el) => {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        document.getElementById('view-'+id).classList.add('active');
         if(el) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
-            el.classList.add('active-nav');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
         }
     };
 
 </script>
 </body>
 </html>
-p
