@@ -4,101 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROF - Rate of Fire</title>
-    <link rel="stylesheet" href="style.css"> <style>
-        body { font-family: sans-serif; background: #fafafa; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        header { background: #fff; width: 100%; text-align: center; border-bottom: 1px solid #dbdbdb; padding: 10px 0; position: sticky; top: 0; }
-        .container { max-width: 500px; width: 100%; padding: 20px; }
-        .post-form { background: white; padding: 15px; border: 1px solid #dbdbdb; margin-bottom: 20px; }
-        .post-form input { width: 95%; padding: 10px; margin-bottom: 10px; border: 1px solid #dbdbdb; border-radius: 4px; }
-        .post-form button { background: #0095f6; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .card { background: white; border: 1px solid #dbdbdb; margin-bottom: 20px; border-radius: 3px; }
-        .card img { width: 100%; display: block; }
-        .card-content { padding: 15px; }
-        .like-btn { cursor: pointer; color: #ed4956; font-size: 1.2rem; border: none; background: none; }
+    <script src="https://cdn.tailwindcss.com"></script> <style>
+        .post-card { transition: transform 0.2s; }
+        .post-card:hover { transform: translateY(-2px); }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
 
-<header>
-    <h1>ROF</h1>
-</header>
+<nav class="bg-white border-b sticky top-0 z-50 p-3 shadow-sm">
+    <div class="max-w-2xl mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-red-600 tracking-tighter">🔥 ROF</h1>
+        <div id="auth-area">
+            <button id="loginBtn" class="bg-blue-500 text-white px-4 py-2 rounded-full font-bold text-sm">Google ile Giriş</button>
+        </div>
+        <div id="user-area" class="hidden flex items-center gap-3">
+            <img id="userImg" class="w-8 h-8 rounded-full border" src="">
+            <button id="logoutBtn" class="text-gray-500 text-xs underline">Çıkış</button>
+        </div>
+    </div>
+</nav>
 
-<div class="container">
-    <div class="post-form">
-        <h3>Yeni Gönderi Paylaş</h3>
-        <input type="text" id="postImageUrl" placeholder="Fotoğraf URL'si yapıştır...">
-        <input type="text" id="postCaption" placeholder="Bir açıklama yaz...">
-        <button id="postBtn">Ateşle (Paylaş)</button>
+<main class="max-w-xl mx-auto p-4">
+    <div id="post-box" class="hidden bg-white rounded-xl shadow p-4 mb-6 border border-gray-200">
+        <textarea id="captionInput" placeholder="Neler oluyor? (Ateşle!)" class="w-full border-none focus:ring-0 text-lg resize-none" rows="3"></textarea>
+        <input type="text" id="urlInput" placeholder="Görsel URL (İsteğe bağlı)" class="w-full mt-2 p-2 bg-gray-50 rounded border text-sm">
+        <div class="flex justify-end mt-3 border-t pt-3">
+            <button id="shareBtn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold hover:bg-red-600">Ateşle</button>
+        </div>
     </div>
 
-    <div id="feed"></div>
-</div>
+    <div id="feed" class="space-y-4">
+        <p class="text-center text-gray-400 py-10">Yükleniyor...</p>
+    </div>
+</main>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
-    authDomain: "rate-of-fire-rof.firebaseapp.com",
-    projectId: "rate-of-fire-rof",
-    storageBucket: "rate-of-fire-rof.firebasestorage.app",
-    messagingSenderId: "706117316470",
-    appId: "1:706117316470:web:833f1abf5994f96c0b5457"
-  };
+    const firebaseConfig = {
+        apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
+        authDomain: "rate-of-fire-rof.firebaseapp.com",
+        projectId: "rate-of-fire-rof",
+        storageBucket: "rate-of-fire-rof.firebasestorage.app",
+        messagingSenderId: "706117316470",
+        appId: "1:706117316470:web:833f1abf5994f96c0b5457"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
 
-  // GÖNDERİ PAYLAŞMA
-  const postBtn = document.getElementById('postBtn');
-  postBtn.addEventListener('click', async () => {
-    const url = document.getElementById('postImageUrl').value;
-    const caption = document.getElementById('postCaption').value;
+    // --- AUTH MANTIĞI ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('auth-area').classList.add('hidden');
+            document.getElementById('user-area').classList.remove('hidden');
+            document.getElementById('post-box').classList.remove('hidden');
+            document.getElementById('userImg').src = user.photoURL;
+        } else {
+            document.getElementById('auth-area').classList.remove('hidden');
+            document.getElementById('user-area').classList.add('hidden');
+            document.getElementById('post-box').classList.add('hidden');
+        }
+    });
 
-    if(url && caption) {
+    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
+    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+    // --- GÖNDERİ PAYLAŞMA ---
+    document.getElementById('shareBtn').onclick = async () => {
+        const user = auth.currentUser;
+        const caption = document.getElementById('captionInput').value;
+        const url = document.getElementById('urlInput').value;
+
+        if (!caption && !url) return alert("Boş gönderi atamazsın!");
+
         await addDoc(collection(db, "posts"), {
-            imageUrl: url,
+            uid: user.uid,
+            userName: user.displayName,
+            userPhoto: user.photoURL,
             caption: caption,
-            likes: 0,
-            timestamp: new Date()
+            imageUrl: url || null,
+            likes: [], // Beğenenlerin UID'leri burada tutulacak
+            createdAt: serverTimestamp()
         });
-        document.getElementById('postImageUrl').value = "";
-        document.getElementById('postCaption').value = "";
-    } else {
-        alert("Lütfen tüm alanları doldur!");
-    }
-  });
 
-  // AKIŞI LİSTELEME (Real-time)
-  const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-  onSnapshot(q, (snapshot) => {
-    const feed = document.getElementById('feed');
-    feed.innerHTML = "";
-    snapshot.forEach((docSnap) => {
-        const post = docSnap.data();
-        const postId = docSnap.id;
-        
-        feed.innerHTML += `
-            <div class="card">
-                <img src="${post.imageUrl}" alt="post">
-                <div class="card-content">
-                    <button class="like-btn" onclick="likePost('${postId}')">❤️ ${post.likes}</button>
-                    <p><strong>Kullanıcı</strong> ${post.caption}</p>
+        document.getElementById('captionInput').value = "";
+        document.getElementById('urlInput').value = "";
+    };
+
+    // --- AKIŞI LİSTELEME VE BEĞENİ ---
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            const isLiked = auth.currentUser && data.likes.includes(auth.currentUser.uid);
+
+            const postHTML = `
+                <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden post-card">
+                    <div class="p-3 flex items-center gap-2">
+                        <img src="${data.userPhoto}" class="w-8 h-8 rounded-full border">
+                        <span class="font-bold text-sm">${data.userName}</span>
+                    </div>
+                    ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full max-h-96 object-cover border-y">` : ''}
+                    <div class="p-4">
+                        <p class="text-gray-800 mb-3">${data.caption}</p>
+                        <div class="flex items-center gap-4">
+                            <button onclick="handleLike('${id}', ${isLiked})" class="flex items-center gap-1 ${isLiked ? 'text-red-500' : 'text-gray-500'}">
+                                <span>${isLiked ? '❤️' : '🤍'}</span>
+                                <span class="text-sm font-bold">${data.likes.length}</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+            feed.innerHTML += postHTML;
+        });
     });
-  });
 
-  // BEĞENİ ATMA (Global fonksiyon yapmamız gerek)
-  window.likePost = async (id) => {
-    const postRef = doc(db, "posts", id);
-    await updateDoc(postRef, {
-        likes: increment(1)
-    });
-  };
-
+    // BEĞENİ FONKSİYONU
+    window.handleLike = async (postId, currentlyLiked) => {
+        const user = auth.currentUser;
+        if (!user) return alert("Beğenmek için giriş yapmalısın!");
+        
+        const postRef = doc(db, "posts", postId);
+        await updateDoc(postRef, {
+            likes: currentlyLiked ? arrayRemove(user.uid) : arrayUnion(user.uid)
+        });
+    };
 </script>
 </body>
 </html>
+
