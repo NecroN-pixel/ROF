@@ -3,133 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROF Beta v2.0</title>
+    <title>ROF - Rate of Fire</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .beta-badge { font-size: 10px; vertical-align: super; background: #ef4444; color: white; padding: 2px 5px; border-radius: 4px; margin-left: 2px; }
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 12px; z-index: 100; }
-        .active-tab { color: #ef4444; }
-        .hidden { display: none; }
-    </style>
 </head>
-<body class="bg-gray-50 min-h-screen pb-24">
+<body class="bg-gray-100 pb-20">
 
-<nav class="bg-white border-b sticky top-0 z-50 p-3">
-    <div class="max-w-2xl mx-auto flex justify-between items-center">
-        <h1 class="text-3xl font-black italic text-red-600">ROF<span class="beta-badge italic font-bold">BETA</span></h1>
-        <div id="auth-status"></div>
-    </div>
-</nav>
-
-<main class="max-w-xl mx-auto p-4">
-    
-    <div id="view-home">
-        <div id="post-input" class="bg-white rounded-2xl p-4 mb-6 border shadow-sm hidden">
-            <textarea id="captionText" placeholder="Neler oluyor?" class="w-full border-none focus:ring-0 text-lg resize-none"></textarea>
-            <div class="flex justify-between items-center mt-2 pt-2 border-t">
-                <input type="text" id="imgUrlInput" placeholder="Resim URL" class="text-xs bg-gray-100 p-2 rounded w-2/3">
-                <button id="fireBtn" class="bg-red-600 text-white px-6 py-2 rounded-full font-bold">ATEŞLE</button>
-            </div>
+    <nav class="bg-white p-4 border-b sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <h1 class="text-2xl font-black text-red-600 italic">ROF</h1>
+        <div id="user-info">
+            <button id="loginBtn" class="bg-blue-500 text-white px-4 py-1 rounded-full font-bold">Giriş Yap</button>
         </div>
-        <div id="feed" class="space-y-4"></div>
-    </div>
+    </nav>
 
-    <div id="view-explore" class="hidden">
-        <div class="relative mb-4">
-            <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
-            <input type="text" id="userSearch" placeholder="Kullanıcı ara (@kullaniciadi)..." class="w-full bg-gray-200 border-none rounded-full py-2 pl-10">
+    <main class="max-w-lg mx-auto p-4">
+        <div id="post-box" class="bg-white p-4 rounded-xl shadow-sm mb-6 hidden">
+            <textarea id="caption" placeholder="Neler oluyor?" class="w-full border-none outline-none text-lg resize-none"></textarea>
+            <input type="text" id="imgUrl" placeholder="Görsel URL (Zorunlu değil)" class="w-full p-2 bg-gray-50 rounded text-sm mt-2 border">
+            <button id="fireBtn" class="w-full bg-red-600 text-white font-bold py-2 rounded-full mt-3">ATEŞLE</button>
         </div>
-        <div id="search-results" class="space-y-2"></div>
-    </div>
 
-    <div id="view-profile" class="hidden text-center">
-        <div id="profile-info" class="bg-white p-6 rounded-2xl border mb-4">
-            <img id="p-photo" class="w-24 h-24 rounded-full mx-auto border-4 border-red-500 mb-2">
-            <h2 id="p-name" class="text-xl font-bold"></h2>
-            <p id="p-username" class="text-gray-500 mb-4"></p>
-            
-            <div class="flex flex-col gap-2">
-                <button onclick="editProfile()" class="bg-gray-100 p-2 rounded-lg font-bold">Profili Düzenle</button>
-                <button onclick="logout()" class="text-red-500 font-bold mt-4">Çıkış Yap</button>
-                <button onclick="deleteAccount()" class="text-xs text-gray-400 mt-8 underline">Hesabı Tamamen Sil</button>
-            </div>
+        <div id="feed" class="space-y-4">
+            <p class="text-center text-gray-400">Yükleniyor...</p>
         </div>
-    </div>
-</main>
+    </main>
 
-<div class="nav-bottom">
-    <button onclick="switchTab('home')" id="tab-home" class="active-tab"><i class="fa-solid fa-house text-xl"></i></button>
-    <button onclick="switchTab('explore')" id="tab-explore"><i class="fa-solid fa-magnifying-glass text-xl"></i></button>
-    <button onclick="switchTab('profile')" id="tab-profile"><i class="fa-solid fa-user text-xl"></i></button>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        // !!! BURAYI KENDİ BİLGİLERİNLE DOLDUR !!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
+            authDomain: "rate-of-fire-rof.firebaseapp.com",
+            projectId: "rate-of-fire-rof",
+            storageBucket: "rate-of-fire-rof.firebasestorage.app",
+            messagingSenderId: "706117316470",
+            appId: "1:706117316470:web:833f1abf5994f96c0b5457"
+        };
 
-    const firebaseConfig = {
-        // Kendi bilgilerinizi buraya ekleyin
-        apiKey: "AIzaSy...",
-        authDomain: "...",
-        projectId: "...",
-        storageBucket: "...",
-        messagingSenderId: "...",
-        appId: "..."
-    };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
+        // GİRİŞ YAPMA
+        document.getElementById('loginBtn').onclick = () => {
+            signInWithPopup(auth, provider)
+                .then(() => console.log("Giriş başarılı"))
+                .catch((err) => alert("Giriş Hatası: " + err.message));
+        };
 
-    let myData = null;
-
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            const userSnap = await getDoc(doc(db, "users", user.uid));
-            if (!userSnap.exists()) {
-                const username = prompt("Kullanıcı adınız ne olsun? (Örn: rofcu)");
-                await setDoc(doc(db, "users", user.uid), {
-                    username: "@" + (username || "user" + Math.floor(Math.random()*1000)),
-                    displayName: user.displayName,
-                    photoURL: user.photoURL,
-                    uid: user.uid
-                });
-                location.reload();
-            } else {
-                myData = userSnap.data();
-                document.getElementById('post-input').classList.remove('hidden');
-                updateProfileUI();
+        // KULLANICI DURUMU KONTROLÜ
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('post-box').classList.remove('hidden');
+                document.getElementById('user-info').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <img src="${user.photoURL}" class="w-8 h-8 rounded-full">
+                        <button onclick="auth.signOut()" class="text-xs text-gray-500 underline">Çıkış</button>
+                    </div>`;
                 loadFeed();
+            } else {
+                document.getElementById('post-box').classList.add('hidden');
+                document.getElementById('user-info').innerHTML = `<button id="loginBtn" onclick="login()" class="bg-blue-500 text-white px-4 py-1 rounded-full font-bold">Giriş Yap</button>`;
             }
-        } else {
-            document.getElementById('auth-status').innerHTML = `<button onclick="login()" class="bg-black text-white px-4 py-2 rounded-lg text-sm">Giriş</button>`;
-        }
-    });
-
-    window.login = () => signInWithPopup(auth, provider);
-    window.logout = () => signOut(auth).then(() => location.reload());
-
-    window.switchTab = (tab) => {
-        ['home', 'explore', 'profile'].forEach(t => {
-            document.getElementById('view-' + t).classList.add('hidden');
-            document.getElementById('tab-' + t).classList.remove('active-tab');
         });
-        document.getElementById('view-' + tab).classList.remove('hidden');
-        document.getElementById('tab-' + tab).classList.add('active-tab');
-    };
 
-    window.deleteAccount = async () => {
-        if(confirm("DİKKAT! Hesabın ve tüm verilerin kalıcı olarak silinecek. Onaylıyor musun?")) {
-            await deleteDoc(doc(db, "users", auth.currentUser.uid));
-            deleteUser(auth.currentUser).then(() => location.reload());
+        window.login = () => signInWithPopup(auth, provider);
+
+        // POST ATMA (Hata Ayıklamalı)
+        document.getElementById('fireBtn').onclick = async () => {
+            const text = document.getElementById('caption').value;
+            const img = document.getElementById('imgUrl').value;
+
+            if (!text && !img) return alert("Boş içerik gönderilemez!");
+
+            try {
+                await addDoc(collection(db, "posts"), {
+                    name: auth.currentUser.displayName,
+                    photo: auth.currentUser.photoURL,
+                    text: text,
+                    image: img || null,
+                    time: serverTimestamp(),
+                    likes: []
+                });
+                document.getElementById('caption').value = "";
+                document.getElementById('imgUrl').value = "";
+                alert("Ateşlendi!");
+            } catch (error) {
+                console.error("Post atma hatası:", error);
+                alert("Hata: " + error.message);
+            }
+        };
+
+        // AKIŞI YÜKLE
+        function loadFeed() {
+            const q = query(collection(db, "posts"), orderBy("time", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const feed = document.getElementById('feed');
+                feed.innerHTML = "";
+                snapshot.forEach(docSnap => {
+                    const post = docSnap.data();
+                    feed.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border">
+                            <div class="flex items-center gap-2 mb-3">
+                                <img src="${post.photo}" class="w-8 h-8 rounded-full">
+                                <span class="font-bold text-sm">${post.name}</span>
+                            </div>
+                            <p class="text-gray-800">${post.text}</p>
+                            ${post.image ? `<img src="${post.image}" class="w-full mt-3 rounded-lg border">` : ''}
+                        </div>`;
+                });
+            });
         }
-    };
-
-    // ... (Beğeni, Yorum ve Akış yükleme kodları buraya devam eder)
-</script>
+    </script>
 </body>
 </html>
 
