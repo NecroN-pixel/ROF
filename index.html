@@ -1,90 +1,98 @@
 
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ROF ULTRA</title>
+    <title>ROF FIXER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #000; color: white; font-family: -apple-system, sans-serif; }
-        .app-shell { max-width: 500px; margin: 0 auto; min-height: 100vh; background: #000; border-inline: 1px solid #222; position: relative; padding-bottom: 80px; }
+        body { background: #000; font-family: -apple-system, sans-serif; color: white; }
+        .app-shell { max-width: 500px; margin: 0 auto; background: #000; min-height: 100vh; border-left: 1px solid #333; border-right: 1px solid #333; padding-bottom: 80px; }
         .view { display: none; }
         .view.active { display: block; }
-        .nav-active { color: #f87171 !important; }
-        ::-webkit-scrollbar { display: none; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
-        canvas { display: none; }
+        .nav-btn { color: #666; transition: 0.2s; }
+        .nav-btn.active { color: #fff; }
+        .story-ring { background: linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7); padding: 2px; border-radius: 50%; }
+        input, textarea { background: #111; color: white; border: 1px solid #333; }
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div class="app-shell">
-    <header class="sticky top-0 bg-black/80 backdrop-blur z-50 p-4 border-b border-gray-800 flex justify-between items-center">
-        <h1 class="text-2xl font-black italic tracking-tighter text-white" onclick="location.reload()">ROF</h1>
-        <div class="flex gap-4">
-            <i class="fa-regular fa-bell text-xl"></i>
-            <button onclick="handleDeleteAccount()" class="text-red-500 text-xs border border-red-900 px-2 py-1 rounded">Hesabı Sil</button>
-        </div>
+
+    <header class="sticky top-0 bg-black/90 backdrop-blur z-50 border-b border-gray-800 p-4 flex justify-between items-center">
+        <h1 class="text-2xl font-black italic tracking-tighter cursor-pointer" onclick="switchTab('home')">ROF</h1>
+        <div id="auth-status"></div>
     </header>
 
     <section id="view-home" class="view active">
-        <div class="p-4 border-b border-gray-800 flex gap-3">
-            <img id="my-avatar" class="w-10 h-10 rounded-full border border-gray-700">
-            <div class="flex-1">
-                <textarea id="tweet-text" placeholder="Neler oluyor?" class="w-full bg-transparent border-none outline-none text-lg resize-none" rows="2"></textarea>
-                <div id="preview-box" class="hidden relative mt-2">
-                    <img id="img-output" class="w-full rounded-xl border border-gray-700">
-                    <button onclick="clearImage()" class="absolute top-2 right-2 bg-black/50 p-1 rounded-full">✕</button>
-                </div>
-                <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-900">
-                    <label class="cursor-pointer text-red-500 hover:text-red-400">
-                        <i class="fa-regular fa-image text-xl"></i>
-                        <input type="file" id="file-input" class="hidden" accept="image/*" onchange="processImage(event)">
-                    </label>
-                    <button onclick="sendPost()" class="bg-red-600 text-white px-6 py-1.5 rounded-full font-bold text-sm">Paylaş</button>
-                </div>
+        <div class="flex gap-4 p-4 overflow-x-auto border-b border-gray-800 scrollbar-hide">
+            <div class="flex flex-col items-center min-w-[70px]">
+                <div class="story-ring"><img id="story-me" src="https://via.placeholder.com/60" class="w-16 h-16 rounded-full border-2 border-black object-cover"></div>
+                <span class="text-xs mt-1 text-gray-400">Hikayen</span>
             </div>
         </div>
-        <div id="feed"></div>
+
+        <div id="feed-container"></div>
+    </section>
+
+    <section id="view-search" class="view">
+        <div class="p-4 sticky top-[60px] bg-black z-40">
+            <div class="bg-gray-900 flex items-center p-3 rounded-full border border-gray-800">
+                <i class="fa fa-search text-gray-500 ml-2"></i>
+                <input type="text" onkeyup="searchUser(this.value)" placeholder="Kullanıcı ara..." class="bg-transparent w-full ml-3 outline-none border-none">
+            </div>
+        </div>
+        <div id="search-results" class="bg-black p-2"></div>
+        <div id="explore-grid" class="grid grid-cols-3 gap-0.5"></div>
     </section>
 
     <section id="view-profile" class="view">
-        <div id="profile-header" class="p-5 border-b border-gray-800"></div>
-        <div id="profile-grid" class="grid grid-cols-3 gap-0.5"></div>
+        <div id="profile-content" class="p-5">
+            <div class="text-center text-gray-500 mt-10">Profil yükleniyor...</div>
+        </div>
     </section>
 
-    <nav class="fixed bottom-0 w-full max-w-[500px] bg-black border-t border-gray-800 flex justify-around p-4 z-50">
-        <button onclick="changeTab('home', this)" class="nav-active"><i class="fa-solid fa-house text-2xl"></i></button>
-        <button onclick="alert('Arama aktif!')"><i class="fa-solid fa-magnifying-glass text-2xl text-gray-500"></i></button>
-        <button onclick="document.getElementById('tweet-text').focus(); changeTab('home')"><i class="fa-solid fa-square-plus text-3xl text-red-600"></i></button>
-        <button onclick="alert('Beğeni')"><i class="fa-regular fa-heart text-2xl text-gray-500"></i></button>
-        <button onclick="loadProfile(auth.currentUser.uid, this)"><img id="nav-avatar" class="w-7 h-7 rounded-full border border-gray-700"></button>
+    <nav class="fixed bottom-0 w-full max-w-[500px] bg-black border-t border-gray-800 flex justify-around items-center p-4 z-50">
+        <button onclick="switchTab('home', this)" class="nav-btn active"><i class="fa-solid fa-house text-2xl"></i></button>
+        <button onclick="switchTab('search', this)" class="nav-btn"><i class="fa-solid fa-magnifying-glass text-2xl"></i></button>
+        <button onclick="openPostModal()" class="text-white bg-red-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transform active:scale-90 transition"><i class="fa-solid fa-plus text-2xl"></i></button>
+        <button onclick="alert('Yakında')" class="nav-btn"><i class="fa-regular fa-heart text-2xl"></i></button>
+        <button onclick="loadMyProfile(true)" class="nav-btn"><img id="nav-img" src="" class="w-7 h-7 rounded-full border border-gray-600"></button>
     </nav>
+
 </div>
 
-<div id="modal-detail" class="modal-overlay" onclick="this.style.display='none'">
-    <div class="bg-gray-900 w-full rounded-2xl p-4 overflow-y-auto max-h-[90vh]" onclick="event.stopPropagation()">
-        <div id="detail-content"></div>
-        <div class="mt-4 border-t border-gray-800 pt-4">
-            <h3 class="font-bold mb-3">Yorumlar</h3>
-            <div id="detail-comments" class="space-y-3 mb-4 max-h-40 overflow-y-auto"></div>
-            <div class="flex gap-2">
-                <input type="text" id="comment-input" class="flex-1 bg-black border border-gray-800 p-2 rounded-lg outline-none" placeholder="Yorum yaz...">
-                <button id="comment-btn" class="text-red-500 font-bold">Gönder</button>
-            </div>
-        </div>
+<div id="modal-post" class="modal">
+    <div class="bg-gray-900 w-[90%] max-w-md rounded-2xl p-5 border border-gray-700 relative">
+        <button onclick="closePostModal()" class="absolute top-4 right-4 text-gray-400"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <h2 class="text-white font-bold text-lg mb-4">Yeni Gönderi</h2>
+        
+        <textarea id="post-text" placeholder="Ne düşünüyorsun?" class="w-full bg-black p-3 rounded-xl outline-none resize-none h-24 mb-3"></textarea>
+        
+        <label class="flex items-center gap-3 p-3 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition mb-3">
+            <i class="fa-regular fa-image text-green-400 text-xl"></i>
+            <span id="file-label" class="text-sm text-gray-300">Fotoğraf Seç (Max 500KB)</span>
+            <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewFile()">
+        </label>
+
+        <img id="img-preview" class="w-full h-48 object-cover rounded-xl mb-4 hidden border border-gray-700">
+        
+        <button onclick="sharePost()" id="btn-share" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-500">PAYLAŞ</button>
     </div>
 </div>
 
-<canvas id="compress-canvas"></canvas>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, setDoc, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
+    // --- YAPILANDIRMA ---
     const firebaseConfig = {
         apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
         authDomain: "rate-of-fire-rof.firebaseapp.com",
@@ -98,150 +106,286 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-    let userData = null;
-    let currentImage = null;
+    let currentUser = null;
+    let selectedImageBase64 = null;
 
+    // --- OTO TAMİR SİSTEMİ ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const ref = doc(db, "users", user.uid);
-            const snap = await getDoc(ref);
-            if (!snap.exists() || !snap.data().name) {
-                userData = { uid: user.uid, name: user.displayName, photo: user.photoURL, following: [], followers: [] };
-                await setDoc(ref, userData);
-            } else { userData = snap.data(); }
-            document.getElementById('my-avatar').src = userData.photo;
-            document.getElementById('nav-avatar').src = userData.photo;
+            currentUser = user;
+            document.getElementById('nav-img').src = user.photoURL;
+            document.getElementById('story-me').src = user.photoURL;
+            
+            // Veritabanı Kontrolü
+            const userRef = doc(db, "users", user.uid);
+            const snap = await getDoc(userRef);
+            
+            // Eğer veri yoksa veya 'undefined' ise TAMİR ET
+            if (!snap.exists() || !snap.data().name || snap.data().name === "undefined") {
+                console.log("🛠️ HESAP ONARILIYOR...");
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    name: user.displayName || "Kullanıcı",
+                    username: "@" + (user.displayName || "user").replace(/\s/g, '').toLowerCase() + Math.floor(Math.random()*1000),
+                    photo: user.photoURL,
+                    bio: "ROF kullanıcısı.",
+                    followers: [],
+                    following: []
+                }, { merge: true }); // Merge true: Varsa üzerine yazar, yoksa oluşturur.
+            }
             loadFeed();
-        } else { signInWithPopup(auth, provider); }
+        } else {
+            signInWithPopup(auth, provider);
+        }
     });
 
-    // --- GÖRSEL KÜÇÜLTME SİSTEMİ ---
-    window.processImage = (e) => {
-        const file = e.target.files[0];
+    // --- FOTOĞRAF YÜKLEME SİSTEMİ (BASE64) ---
+    window.previewFile = () => {
+        const file = document.getElementById('post-file').files[0];
         if (!file) return;
+
+        // Boyut Kontrolü (500KB Limit - Firestore çökmemesi için)
+        if (file.size > 500 * 1024) {
+            alert("Dosya çok büyük! Lütfen 500KB altı bir resim seç.");
+            document.getElementById('post-file').value = "";
+            return;
+        }
+
         const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.getElementById('compress-canvas');
-                const ctx = canvas.getContext('2d');
-                let width = img.width;
-                let height = img.height;
-                const max = 800; // Max boyut
-                if (width > height && width > max) { height *= max / width; width = max; }
-                else if (height > max) { width *= max / height; height = max; }
-                canvas.width = width; canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-                currentImage = canvas.toDataURL('image/jpeg', 0.6); // %60 kaliteye düşürür
-                document.getElementById('img-output').src = currentImage;
-                document.getElementById('preview-box').classList.remove('hidden');
-            };
-            img.src = event.target.result;
+        reader.onloadend = () => {
+            selectedImageBase64 = reader.result;
+            const img = document.getElementById('img-preview');
+            img.src = selectedImageBase64;
+            img.classList.remove('hidden');
+            document.getElementById('file-label').innerText = "Fotoğraf Seçildi ✅";
         };
         reader.readAsDataURL(file);
     };
 
-    window.clearImage = () => { currentImage = null; document.getElementById('preview-box').classList.add('hidden'); };
+    window.sharePost = async () => {
+        const txt = document.getElementById('post-text').value;
+        if (!txt && !selectedImageBase64) return alert("Boş post atılamaz!");
 
-    // --- POST GÖNDERME ---
-    window.sendPost = async () => {
-        const text = document.getElementById('tweet-text').value;
-        if (!text && !currentImage) return;
-        await addDoc(collection(db, "posts"), {
-            uid: userData.uid, name: userData.name, photo: userData.photo,
-            text, image: currentImage, likes: [], comments: [], time: serverTimestamp()
-        });
-        document.getElementById('tweet-text').value = "";
-        clearImage();
+        document.getElementById('btn-share').innerText = "Yükleniyor...";
+        
+        try {
+            // Kullanıcı verisini taze çek (Hata önlemek için)
+            const uSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            const uData = uSnap.data();
+
+            await addDoc(collection(db, "posts"), {
+                uid: auth.currentUser.uid,
+                name: uData.name,
+                username: uData.username,
+                photo: uData.photo,
+                text: txt,
+                image: selectedImageBase64 || null, // Resmi buraya gömüyoruz
+                likes: [],
+                timestamp: serverTimestamp()
+            });
+
+            closePostModal();
+            alert("Paylaşıldı!");
+        } catch (error) {
+            alert("Hata: " + error.message);
+        } finally {
+            document.getElementById('btn-share').innerText = "PAYLAŞ";
+        }
     };
 
-    // --- AKIŞ VE DETAY ---
+    window.openPostModal = () => document.getElementById('modal-post').style.display = 'flex';
+    window.closePostModal = () => {
+        document.getElementById('modal-post').style.display = 'none';
+        document.getElementById('post-text').value = "";
+        document.getElementById('post-file').value = "";
+        document.getElementById('img-preview').classList.add('hidden');
+        document.getElementById('file-label').innerText = "Fotoğraf Seç (Max 500KB)";
+        selectedImageBase64 = null;
+    };
+
+    // --- AKIŞ ---
     function loadFeed() {
-        onSnapshot(query(collection(db, "posts"), orderBy("time", "desc")), (snaps) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = "";
+        const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snaps) => {
+            const feed = document.getElementById('feed-container');
+            const grid = document.getElementById('explore-grid');
+            feed.innerHTML = ""; grid.innerHTML = "";
+
             snaps.forEach(s => {
                 const p = s.data();
+                const isLiked = p.likes && p.likes.includes(auth.currentUser.uid);
+                
+                // Feed Card
                 feed.innerHTML += `
-                <div class="border-b border-gray-900 p-4" onclick="openDetail('${s.id}')">
-                    <div class="flex items-center gap-3 mb-3">
-                        <img src="${p.photo}" class="w-9 h-9 rounded-full">
-                        <b class="text-sm">${p.name}</b>
-                    </div>
-                    <p class="text-gray-200 mb-3">${p.text}</p>
-                    ${p.image ? `<img src="${p.image}" class="w-full rounded-xl border border-gray-800">` : ''}
-                    <div class="flex gap-6 mt-4 text-gray-500">
-                        <span><i class="fa-regular fa-heart"></i> ${p.likes.length}</span>
-                        <span><i class="fa-regular fa-comment"></i> ${p.comments.length}</span>
-                    </div>
-                </div>`;
+                    <div class="border-b border-gray-800 pb-4 mb-2">
+                        <div class="flex items-center gap-3 p-3" onclick="openProfile('${p.uid}')">
+                            <img src="${p.photo}" class="w-10 h-10 rounded-full border border-gray-700">
+                            <div>
+                                <h4 class="font-bold text-sm text-white">${p.name}</h4>
+                                <span class="text-xs text-gray-500">${p.username}</span>
+                            </div>
+                        </div>
+                        ${p.image ? `<img src="${p.image}" class="w-full max-h-[500px] object-cover bg-gray-900 border-y border-gray-800">` : ''}
+                        <div class="p-3">
+                             <div class="flex gap-4 text-2xl mb-2 text-white">
+                                <button onclick="likePost('${s.id}', ${isLiked})" class="${isLiked ? 'text-red-600' : 'text-white'}"><i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i></button>
+                                <button><i class="fa-regular fa-comment"></i></button>
+                                <button><i class="fa-regular fa-paper-plane"></i></button>
+                            </div>
+                            <p class="text-sm text-white"><span class="font-bold mr-2">${p.name}</span>${p.text}</p>
+                        </div>
+                    </div>`;
+                
+                // Explore Grid
+                if(p.image) grid.innerHTML += `<img src="${p.image}" onclick="openProfile('${p.uid}')" class="aspect-square object-cover w-full cursor-pointer hover:opacity-80">`;
             });
         });
     }
 
-    window.openDetail = async (id) => {
-        const p = (await getDoc(doc(db, "posts", id))).data();
-        const detail = document.getElementById('detail-content');
-        const commList = document.getElementById('detail-comments');
-        document.getElementById('modal-detail').style.display = 'flex';
-        
-        detail.innerHTML = `
-            <div class="flex items-center gap-3 mb-4">
-                <img src="${p.photo}" class="w-10 h-10 rounded-full">
-                <b class="text-lg">${p.name}</b>
-            </div>
-            <p class="text-white text-xl mb-4">${p.text}</p>
-            ${p.image ? `<img src="${p.image}" class="w-full rounded-xl mb-4">` : ''}
-        `;
-
-        commList.innerHTML = p.comments.map(c => `<p class="text-sm"><b>${c.user}:</b> ${c.text}</p>`).join('');
-
-        document.getElementById('comment-btn').onclick = async () => {
-            const val = document.getElementById('comment-input').value;
-            if(!val) return;
-            await updateDoc(doc(db, "posts", id), { comments: arrayUnion({ user: userData.name, text: val }) });
-            document.getElementById('comment-input').value = "";
-            openDetail(id); // Yenile
-        };
+    window.likePost = async (id, status) => {
+        const ref = doc(db, "posts", id);
+        await updateDoc(ref, { likes: status ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) });
     };
 
-    // --- PROFİL ---
-    window.loadProfile = async (uid, el) => {
-        changeTab('profile', el);
-        const u = (await getDoc(doc(db, "users", uid))).data();
-        document.getElementById('profile-header').innerHTML = `
-            <div class="flex items-center gap-6 mb-4">
-                <img src="${u.photo}" class="w-20 h-20 rounded-full border-2 border-red-600 p-1">
-                <div>
-                    <h2 class="text-2xl font-bold">${u.name}</h2>
-                    <p class="text-gray-500">@${u.name.toLowerCase().replace(/\s/g, '')}</p>
+    // --- PROFİL & HESAP SİLME ---
+    window.loadMyProfile = () => openProfile(auth.currentUser.uid);
+
+    window.openProfile = async (uid) => {
+        switchTab('profile');
+        const container = document.getElementById('profile-content');
+        container.innerHTML = `<div class="text-center mt-10 text-white">Yükleniyor...</div>`;
+
+        try {
+            const uRef = doc(db, "users", uid);
+            let uSnap = await getDoc(uRef);
+            
+            // Güvenlik: Veri yoksa oluştur
+            if (!uSnap.exists()) {
+                 container.innerHTML = "Kullanıcı verisi bulunamadı. Lütfen sayfayı yenile.";
+                 return;
+            }
+            
+            const u = uSnap.data();
+            const isMe = uid === auth.currentUser.uid;
+            const isFollowing = u.followers && u.followers.includes(auth.currentUser.uid);
+
+            // Post Sayısını Bul
+            const q = query(collection(db, "posts"), where("uid", "==", uid));
+            const pSnaps = await getDocs(q);
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between mb-6">
+                     <img src="${u.photo}" class="w-20 h-20 rounded-full border-2 border-gray-700">
+                     <div class="flex gap-4 text-center text-white">
+                        <div><b class="text-lg">${pSnaps.size}</b><br><span class="text-xs text-gray-500">Post</span></div>
+                        <div><b class="text-lg">${u.followers ? u.followers.length : 0}</b><br><span class="text-xs text-gray-500">Takipçi</span></div>
+                        <div><b class="text-lg">${u.following ? u.following.length : 0}</b><br><span class="text-xs text-gray-500">Takip</span></div>
+                     </div>
                 </div>
-            </div>
-        `;
-        const q = query(collection(db, "posts"), where("uid", "==", uid));
-        const snaps = await getDocs(q);
-        const grid = document.getElementById('profile-grid');
-        grid.innerHTML = "";
-        snaps.forEach(s => {
-            if(s.data().image) grid.innerHTML += `<img src="${s.data().image}" onclick="openDetail('${s.id}')" class="aspect-square object-cover w-full">`;
-        });
-    };
+                <div class="text-white mb-6">
+                    <h2 class="font-bold text-lg">${u.name}</h2>
+                    <p class="text-gray-400 text-sm">${u.username}</p>
+                    <p class="mt-2 text-sm">${u.bio}</p>
+                </div>
+                
+                ${isMe ? `
+                    <div class="flex flex-col gap-3">
+                        <button onclick="editBio()" class="bg-gray-800 text-white py-2 rounded-lg font-bold border border-gray-700">Profili Düzenle</button>
+                        <button onclick="deleteMyAccount()" class="bg-red-900/30 text-red-500 py-2 rounded-lg font-bold border border-red-900 mt-4">⚠️ HESABI SİL</button>
+                        <button onclick="auth.signOut().then(()=>location.reload())" class="text-gray-500 text-sm mt-2">Çıkış Yap</button>
+                    </div>
+                ` : `
+                    <button onclick="followUser('${uid}', ${isFollowing})" class="w-full py-2 rounded-lg font-bold ${isFollowing ? 'bg-gray-800 text-white' : 'bg-blue-600 text-white'}">
+                        ${isFollowing ? 'Takiptesin' : 'Takip Et'}
+                    </button>
+                `}
+                
+                <div class="border-t border-gray-800 mt-6 pt-2 grid grid-cols-3 gap-0.5" id="profile-posts"></div>
+            `;
 
-    window.handleDeleteAccount = async () => {
-        if(confirm("DİKKAT! Tüm verilerin silinecek. Onaylıyor musun?")) {
-            await deleteDoc(doc(db, "users", auth.currentUser.uid));
-            await deleteUser(auth.currentUser);
-            location.reload();
+            const grid = document.getElementById('profile-posts');
+            pSnaps.forEach(doc => {
+                const p = doc.data();
+                if(p.image) grid.innerHTML += `<img src="${p.image}" class="aspect-square object-cover w-full border border-black">`;
+            });
+
+        } catch (err) {
+            console.error(err);
         }
     };
 
-    window.changeTab = (id, el) => {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('view-'+id).classList.add('active');
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
-        if(el) el.classList.add('nav-active');
+    // --- ARAMA ---
+    window.searchUser = async (val) => {
+        const res = document.getElementById('search-results');
+        if(val.length < 1) { res.innerHTML=""; return;}
+        
+        const q = query(collection(db, "users"), where("name", ">=", val), where("name", "<=", val + '\uf8ff'));
+        const snaps = await getDocs(q);
+        res.innerHTML = "";
+        snaps.forEach(s => {
+            const u = s.data();
+            res.innerHTML += `
+                <div onclick="openProfile('${u.uid}')" class="flex items-center gap-3 p-3 hover:bg-gray-900 cursor-pointer rounded-lg">
+                    <img src="${u.photo}" class="w-10 h-10 rounded-full">
+                    <div><b class="text-white text-sm">${u.name}</b><br><span class="text-gray-500 text-xs">${u.username}</span></div>
+                </div>`;
+        });
     };
 
+    window.followUser = async (targetUid, isFollowing) => {
+        const myRef = doc(db, "users", auth.currentUser.uid);
+        const tRef = doc(db, "users", targetUid);
+        if(isFollowing) {
+            await updateDoc(myRef, {following: arrayRemove(targetUid)});
+            await updateDoc(tRef, {followers: arrayRemove(auth.currentUser.uid)});
+        } else {
+            await updateDoc(myRef, {following: arrayUnion(targetUid)});
+            await updateDoc(tRef, {followers: arrayUnion(auth.currentUser.uid)});
+        }
+        openProfile(targetUid);
+    };
+
+    // --- HESAP SİLME FONKSİYONU ---
+    window.deleteMyAccount = async () => {
+        const confirmMsg = prompt("Hesabını silmek için 'EVET' yaz.");
+        if (confirmMsg !== "EVET") return;
+
+        try {
+            const user = auth.currentUser;
+            // 1. Veritabanı verisini sil
+            await deleteDoc(doc(db, "users", user.uid));
+            // 2. Auth kullanıcısını sil
+            await deleteUser(user);
+            alert("Hesap başarıyla silindi. Güle güle!");
+            location.reload();
+        } catch (error) {
+            if (error.code === 'auth/requires-recent-login') {
+                alert("Güvenlik gereği: Lütfen çıkış yapıp tekrar giriş yapın, sonra silmeyi deneyin.");
+            } else {
+                alert("Hata: " + error.message);
+            }
+        }
+    };
+
+    window.editBio = async () => {
+        const newBio = prompt("Yeni biyografi:");
+        if(newBio) {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: newBio });
+            loadMyProfile();
+        }
+    }
+
+    // --- TAB YÖNETİMİ ---
+    window.switchTab = (id, el) => {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-'+id).classList.add('active');
+        if(el) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+    };
+
+    window.auth = auth;
 </script>
 </body>
 </html>
