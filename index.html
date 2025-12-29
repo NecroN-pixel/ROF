@@ -1,202 +1,386 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>ROF BETA v4.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ROF FINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #fafafa; }
+        .app-container { max-width: 500px; margin: 0 auto; background: white; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); padding-bottom: 70px; }
+        .story-gradient { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); padding: 3px; border-radius: 50%; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 500px; background: white; border-top: 1px solid #dbdbdb; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; z-index: 50; }
+        .nav-btn { font-size: 24px; color: #262626; padding: 10px; }
+        .active-nav { color: #dc2743; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: center; justify-content: center; }
         .view { display: none; }
-        .view.active { display: block; padding-bottom: 80px; }
-        .nav-active { color: #ef4444; }
+        .view.active { display: block; }
+        /* Scrollbar gizle */
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-gray-50 flex justify-center">
+<body>
 
-    <div class="w-full max-w-[500px] bg-white min-h-screen shadow-2xl relative">
-        
-        <header class="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-50">
-            <h1 class="text-3xl font-black italic text-red-600 cursor-pointer" onclick="switchTab('home')">ROF</h1>
-            <div id="top-icons" class="flex gap-4 items-center">
-                <button onclick="switchTab('settings')"><i class="fa-solid fa-gear text-xl text-gray-400"></i></button>
-            </div>
-        </header>
+<div class="app-container">
 
-        <section id="home" class="view active">
-            <div id="feed" class="divide-y"></div>
-        </section>
+    <header class="sticky top-0 bg-white/95 backdrop-blur z-40 border-b px-4 py-3 flex justify-between items-center">
+        <h1 class="text-2xl font-black italic text-red-600 tracking-tighter cursor-pointer" onclick="goHome()">ROF</h1>
+        <div class="flex gap-4">
+            <i class="fa-regular fa-heart text-2xl"></i>
+            <i class="fa-regular fa-paper-plane text-2xl"></i>
+        </div>
+    </header>
 
-        <section id="explore" class="view">
-            <div class="p-4">
-                <div class="bg-gray-100 flex items-center p-3 rounded-2xl mb-4">
-                    <i class="fa fa-search text-gray-400 mr-2"></i>
-                    <input type="text" id="searchInput" onkeyup="liveSearch(this.value)" placeholder="Kullanıcı adı yaz (a...)" class="bg-transparent outline-none w-full">
+    <section id="home-view" class="view active">
+        <div class="flex gap-4 p-4 overflow-x-auto border-b bg-white">
+            <div class="flex flex-col items-center min-w-[70px] cursor-pointer" onclick="alert('Hikaye ekleme yakında!')">
+                <div class="story-gradient relative">
+                    <img id="my-story-avatar" src="https://via.placeholder.com/60" class="w-[60px] h-[60px] rounded-full border-2 border-white object-cover">
+                    <div class="absolute bottom-0 right-0 bg-blue-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs border-2 border-white">+</div>
                 </div>
-                <div id="search-results" class="divide-y"></div>
+                <span class="text-xs mt-1 truncate w-full text-center">Hikayen</span>
             </div>
-        </section>
-
-        <section id="user-profile" class="view">
-            <div class="p-6">
-                <button onclick="switchTab('explore')" class="mb-4 text-gray-500"><i class="fa fa-arrow-left"></i> Geri</button>
-                <div id="target-profile-content"></div>
+            <div class="flex flex-col items-center min-w-[70px]">
+                <div class="story-gradient"><img src="https://i.pravatar.cc/150?img=12" class="w-[60px] h-[60px] rounded-full border-2 border-white"></div>
+                <span class="text-xs mt-1">rof_team</span>
             </div>
-        </section>
+        </div>
 
-        <section id="settings" class="view">
-            <div class="p-6">
-                <h2 class="text-xl font-bold mb-6">Hesap Ayarları</h2>
-                <button onclick="handleLogout()" class="w-full bg-gray-100 p-4 rounded-xl font-bold text-left mb-3">
-                    <i class="fa-solid fa-right-from-bracket mr-2 text-red-500"></i> Çıkış Yap
-                </button>
-                <button onclick="handleDeleteAccount()" class="w-full bg-red-50 p-4 rounded-xl font-bold text-left text-red-600">
-                    <i class="fa-solid fa-trash-can mr-2"></i> Hesabı Tamamen Sil
-                </button>
+        <div class="p-4 border-b flex gap-3">
+            <img id="quick-post-avatar" src="" class="w-10 h-10 rounded-full bg-gray-200">
+            <div class="flex-1">
+                <textarea id="quick-text" placeholder="Neler oluyor?" class="w-full outline-none resize-none text-lg mt-1" rows="1"></textarea>
+                <div class="flex justify-between items-center mt-2">
+                    <i class="fa-regular fa-image text-red-500 text-xl cursor-pointer" onclick="document.getElementById('post-modal').style.display='flex'"></i>
+                    <button onclick="sendPost('quick')" class="bg-red-500 text-white px-4 py-1.5 rounded-full font-bold text-sm">Paylaş</button>
+                </div>
             </div>
-        </section>
+        </div>
 
-        <nav class="fixed bottom-0 w-full max-w-[500px] bg-white border-t flex justify-around p-4 shadow-lg">
-            <button onclick="switchTab('home')" class="nav-active"><i class="fa-solid fa-house text-2xl"></i></button>
-            <button onclick="switchTab('explore')"><i class="fa-solid fa-magnifying-glass text-2xl"></i></button>
-            <button onclick="switchTab('home')"><i class="fa-solid fa-square-plus text-2xl"></i></button>
-            <button onclick="viewMyProfile()"><i class="fa-solid fa-user text-2xl"></i></button>
-        </nav>
+        <div id="feed-container" class="pb-4"></div>
+    </section>
+
+    <section id="explore-view" class="view">
+        <div class="p-2 sticky top-[60px] bg-white z-30">
+            <div class="bg-gray-100 p-2 rounded-xl flex items-center">
+                <i class="fa fa-search text-gray-400 ml-2"></i>
+                <input type="text" onkeyup="searchUser(this.value)" placeholder="Ara..." class="bg-transparent w-full p-1 outline-none ml-2">
+            </div>
+        </div>
+        <div id="search-results" class="bg-white absolute w-full z-50 shadow-lg hidden"></div>
+        <div id="explore-grid" class="grid grid-cols-3 gap-0.5 mt-2">
+            </div>
+    </section>
+
+    <section id="profile-view" class="view">
+        <div id="profile-content" class="p-4">
+            </div>
+    </section>
+
+    <nav class="nav-bar">
+        <button class="nav-btn active-nav" onclick="switchTab('home-view', this)"><i class="fa-solid fa-house"></i></button>
+        <button class="nav-btn" onclick="switchTab('explore-view', this)"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button class="nav-btn" onclick="openPostModal()"><i class="fa-regular fa-square-plus text-3xl"></i></button> <button class="nav-btn" onclick="alert('Reels yakında!')"><i class="fa-solid fa-clapperboard"></i></button>
+        <button class="nav-btn" onclick="loadMyProfile()"><img id="nav-avatar" src="" class="w-6 h-6 rounded-full border border-gray-300"></button>
+    </nav>
+
+</div>
+
+<div id="post-modal" class="modal">
+    <div class="bg-white w-[90%] rounded-xl p-4 shadow-2xl">
+        <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <span class="font-bold">Yeni Gönderi</span>
+            <button onclick="document.getElementById('post-modal').style.display='none'" class="text-red-500 font-bold">İptal</button>
+        </div>
+        <textarea id="modal-text" class="w-full p-2 outline-none text-lg resize-none" rows="3" placeholder="Açıklama yaz..."></textarea>
+        <input type="text" id="modal-img" class="w-full bg-gray-100 p-2 rounded mb-4 text-sm" placeholder="Resim URL'si (İsteğe bağlı)">
+        <button onclick="sendPost('modal')" class="w-full bg-blue-500 text-white py-2 rounded-lg font-bold">Paylaş</button>
     </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+<div id="comment-modal" class="modal" style="align-items: flex-end;">
+    <div class="bg-white w-full h-[70vh] rounded-t-2xl p-4 shadow-2xl flex flex-col">
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+        <h3 class="font-bold text-center border-b pb-2 mb-2">Yorumlar</h3>
+        <div id="comments-list" class="flex-1 overflow-y-auto space-y-3 mb-2"></div>
+        <div class="flex gap-2 border-t pt-2">
+            <input type="text" id="comment-input" class="w-full bg-gray-100 rounded-full px-4 py-2 outline-none" placeholder="Yorum ekle...">
+            <button id="send-comment-btn" class="text-blue-500 font-bold px-2">Paylaş</button>
+        </div>
+        <button onclick="document.getElementById('comment-modal').style.display='none'" class="absolute top-4 right-4 text-gray-500">X</button>
+    </div>
+</div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
-            authDomain: "rate-of-fire-rof.firebaseapp.com",
-            projectId: "rate-of-fire-rof",
-            storageBucket: "rate-of-fire-rof.firebasestorage.app",
-            messagingSenderId: "706117316470",
-            appId: "1:706117316470:web:833f1abf5994f96c0b5457"
-        };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+    // --- YAPILANDIRMA ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
+        authDomain: "rate-of-fire-rof.firebaseapp.com",
+        projectId: "rate-of-fire-rof",
+        storageBucket: "rate-of-fire-rof.firebasestorage.app",
+        messagingSenderId: "706117316470",
+        appId: "1:706117316470:web:833f1abf5994f96c0b5457"
+    };
 
-        let currentUser = null;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    let currentUserData = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                const userRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userRef);
-                if (!userSnap.exists()) {
-                    await setDoc(userRef, { uid: user.uid, name: user.displayName, photo: user.photoURL, followers: [], following: [], bio: "Yeni ROF Üyesi" });
-                }
-                loadFeed();
-            } else {
-                signInWithPopup(auth, provider);
+    // --- KULLANICI YÖNETİMİ ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const ref = doc(db, "users", user.uid);
+            const snap = await getDoc(ref);
+            if (!snap.exists()) {
+                await setDoc(ref, {
+                    uid: user.uid,
+                    name: user.displayName,
+                    username: "@" + user.displayName.replace(/\s/g, '').toLowerCase(),
+                    photo: user.photoURL,
+                    bio: "ROF'a hoş geldin!",
+                    followers: [],
+                    following: []
+                });
             }
+            currentUserData = (await getDoc(ref)).data();
+            updateUI(user);
+        } else {
+            signInWithPopup(auth, provider);
+        }
+    });
+
+    function updateUI(user) {
+        document.getElementById('my-story-avatar').src = user.photoURL;
+        document.getElementById('quick-post-avatar').src = user.photoURL;
+        document.getElementById('nav-avatar').src = user.photoURL;
+        loadFeed();
+    }
+
+    // --- PAYLAŞIM (POST) ---
+    window.openPostModal = () => document.getElementById('post-modal').style.display = 'flex';
+    
+    window.sendPost = async (source) => {
+        const textId = source === 'quick' ? 'quick-text' : 'modal-text';
+        const imgId = source === 'quick' ? null : 'modal-img';
+        
+        const text = document.getElementById(textId).value;
+        const img = imgId ? document.getElementById(imgId).value : null;
+
+        if (!text && !img) return alert("Boş gönderi atamazsın!");
+
+        try {
+            await addDoc(collection(db, "posts"), {
+                uid: auth.currentUser.uid,
+                name: currentUserData.name,
+                username: currentUserData.username,
+                photo: currentUserData.photo,
+                text: text,
+                image: img || null,
+                likes: [],
+                comments: [],
+                timestamp: serverTimestamp()
+            });
+            
+            document.getElementById(textId).value = "";
+            if(imgId) document.getElementById(imgId).value = "";
+            document.getElementById('post-modal').style.display = 'none';
+        } catch (e) {
+            alert("Hata: " + e.message);
+        }
+    };
+
+    // --- AKIŞ (FEED) ---
+    function loadFeed() {
+        const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed-container');
+            const grid = document.getElementById('explore-grid');
+            feed.innerHTML = "";
+            grid.innerHTML = "";
+
+            snapshot.forEach(docSnap => {
+                const p = docSnap.data();
+                const id = docSnap.id;
+                const isLiked = p.likes.includes(auth.currentUser.uid);
+
+                // Feed Kartı
+                feed.innerHTML += `
+                <div class="bg-white border-b pb-4 mb-2">
+                    <div class="flex justify-between items-center p-3">
+                        <div class="flex items-center gap-2 cursor-pointer" onclick="openProfile('${p.uid}')">
+                            <img src="${p.photo}" class="w-8 h-8 rounded-full border">
+                            <div>
+                                <p class="font-bold text-sm leading-none">${p.name}</p>
+                                <p class="text-xs text-gray-500">${p.username}</p>
+                            </div>
+                        </div>
+                        <i class="fa fa-ellipsis-h text-gray-400"></i>
+                    </div>
+                    ${p.image ? `<img src="${p.image}" class="w-full max-h-[500px] object-cover bg-gray-100">` : ''}
+                    <div class="px-3 pt-3">
+                        <div class="flex gap-4 text-2xl mb-2">
+                            <button onclick="toggleLike('${id}', ${isLiked})" class="${isLiked ? 'text-red-500' : 'text-black'}"><i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i></button>
+                            <button onclick="openComments('${id}')"><i class="fa-regular fa-comment"></i></button>
+                            <button><i class="fa-regular fa-paper-plane"></i></button>
+                        </div>
+                        <p class="font-bold text-sm mb-1">${p.likes.length} beğenme</p>
+                        <p class="text-sm"><span class="font-bold mr-1">${p.name}</span>${p.text}</p>
+                        <p class="text-gray-400 text-xs mt-1 cursor-pointer" onclick="openComments('${id}')">${p.comments.length} yorumun tümünü gör</p>
+                    </div>
+                </div>`;
+
+                // Keşfet Grid
+                if(p.image) {
+                    grid.innerHTML += `<img src="${p.image}" class="aspect-square object-cover w-full cursor-pointer hover:opacity-90" onclick="alert('Gönderiye git!')">`;
+                }
+            });
+        });
+    }
+
+    // --- BEĞENİ & YORUM ---
+    window.toggleLike = async (id, isLiked) => {
+        const ref = doc(db, "posts", id);
+        await updateDoc(ref, { likes: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) });
+    };
+
+    window.openComments = async (postId) => {
+        document.getElementById('comment-modal').style.display = 'flex';
+        const list = document.getElementById('comments-list');
+        const btn = document.getElementById('send-comment-btn');
+        
+        // Yorumları dinle
+        onSnapshot(doc(db, "posts", postId), (docSnap) => {
+            const data = docSnap.data();
+            list.innerHTML = "";
+            data.comments.forEach(c => {
+                list.innerHTML += `<div class="text-sm mb-2"><span class="font-bold mr-2">${c.user}</span>${c.text}</div>`;
+            });
         });
 
-        // SEKME YÖNETİMİ
-        window.switchTab = (id) => {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        };
-
-        // GELİŞMİŞ CANLI ARAMA
-        window.liveSearch = async (val) => {
-            const resultsDiv = document.getElementById('search-results');
-            if (val.length < 1) { resultsDiv.innerHTML = ""; return; }
-
-            const q = query(collection(db, "users"), where("name", ">=", val), where("name", "<=", val + '\uf8ff'));
-            const querySnapshot = await getDocs(q);
-            
-            resultsDiv.innerHTML = "";
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.uid === currentUser.uid) return;
-                resultsDiv.innerHTML += `
-                    <div onclick="viewUser('${data.uid}')" class="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer">
-                        <img src="${data.photo}" class="w-12 h-12 rounded-full border">
-                        <div>
-                            <p class="font-bold text-sm">${data.name}</p>
-                            <p class="text-xs text-gray-500">Profili gör</p>
-                        </div>
-                    </div>`;
+        // Yorum at
+        btn.onclick = async () => {
+            const val = document.getElementById('comment-input').value;
+            if(!val) return;
+            await updateDoc(doc(db, "posts", postId), {
+                comments: arrayUnion({ user: currentUserData.name, text: val, uid: auth.currentUser.uid })
             });
+            document.getElementById('comment-input').value = "";
         };
+    };
 
-        // BAŞKA PROFİLİ GÖRÜNTÜLEME
-        window.viewUser = async (uid) => {
-            const userSnap = await getDoc(doc(db, "users", uid));
-            const data = userSnap.data();
-            const mySnap = await getDoc(doc(db, "users", currentUser.uid));
-            const myData = mySnap.data();
-            const isFollowing = myData.following.includes(uid);
+    // --- ARAMA & PROFİL ---
+    window.searchUser = async (val) => {
+        const resDiv = document.getElementById('search-results');
+        if(val.length < 1) { resDiv.style.display = "none"; return; }
+        
+        const q = query(collection(db, "users"), where("name", ">=", val), where("name", "<=", val + '\uf8ff'));
+        const snaps = await getDocs(q);
+        
+        resDiv.innerHTML = "";
+        resDiv.style.display = "block";
+        snaps.forEach(s => {
+            const u = s.data();
+            resDiv.innerHTML += `
+                <div class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b" onclick="openProfile('${u.uid}')">
+                    <img src="${u.photo}" class="w-10 h-10 rounded-full">
+                    <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs text-gray-500">${u.username}</p></div>
+                </div>`;
+        });
+    };
 
-            const content = document.getElementById('target-profile-content');
-            content.innerHTML = `
-                <div class="text-center">
-                    <img src="${data.photo}" class="w-24 h-24 rounded-full mx-auto border-4 border-red-500 p-1 mb-4">
-                    <h2 class="text-2xl font-black">${data.name}</h2>
-                    <p class="text-gray-500 mb-6">${data.bio || ''}</p>
-                    <div class="flex gap-2 justify-center">
-                        <button onclick="toggleFollow('${uid}', ${isFollowing})" class="px-8 py-2 rounded-xl font-bold ${isFollowing ? 'bg-gray-200' : 'bg-red-600 text-white'}">
-                            ${isFollowing ? 'Takiptesin' : 'Takip Et'}
-                        </button>
-                        <button onclick="alert('Mesaj özelliği Beta yakında!')" class="bg-black text-white px-8 py-2 rounded-xl font-bold">Mesaj</button>
-                    </div>
+    window.openProfile = async (uid) => {
+        switchTab('profile-view');
+        const userRef = doc(db, "users", uid);
+        const uSnap = await getDoc(userRef);
+        const u = uSnap.data();
+        const isMe = uid === auth.currentUser.uid;
+        const isFollowing = currentUserData.following.includes(uid);
+
+        // Grid için kullanıcının postlarını çek
+        const q = query(collection(db, "posts"), where("uid", "==", uid), orderBy("timestamp", "desc"));
+        const postSnaps = await getDocs(q);
+        let postGridHTML = "";
+        let postCount = 0;
+        postSnaps.forEach(p => {
+            postCount++;
+            const pd = p.data();
+            if(pd.image) postGridHTML += `<img src="${pd.image}" class="aspect-square object-cover w-full">`;
+        });
+
+        document.getElementById('profile-content').innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-xl">${u.username}</h2>
+                ${isMe ? `<button onclick="showSettings()" class="text-2xl"><i class="fa-solid fa-bars"></i></button>` : ''}
+            </div>
+            <div class="flex items-center gap-6 mb-4">
+                <img src="${u.photo}" class="w-20 h-20 rounded-full border p-1">
+                <div class="flex gap-4 text-center flex-1">
+                    <div><b class="block text-lg">${postCount}</b><span class="text-xs">Post</span></div>
+                    <div><b class="block text-lg">${u.followers.length}</b><span class="text-xs">Takipçi</span></div>
+                    <div><b class="block text-lg">${u.following.length}</b><span class="text-xs">Takip</span></div>
                 </div>
-            `;
-            switchTab('user-profile');
-        };
+            </div>
+            <div class="mb-4">
+                <p class="font-bold">${u.name}</p>
+                <p class="text-sm">${u.bio}</p>
+            </div>
+            <div class="flex gap-2 mb-6">
+                ${isMe 
+                    ? `<button onclick="editProfile()" class="bg-gray-200 flex-1 py-1.5 rounded-lg font-bold text-sm">Profili Düzenle</button>`
+                    : `<button onclick="followUser('${uid}', ${isFollowing})" class="${isFollowing ? 'bg-gray-200 text-black' : 'bg-blue-500 text-white'} flex-1 py-1.5 rounded-lg font-bold text-sm">${isFollowing ? 'Takiptesin' : 'Takip Et'}</button>`
+                }
+            </div>
+            <div class="border-t pt-2 grid grid-cols-3 gap-0.5">${postGridHTML}</div>
+        `;
+    };
 
-        // TAKİP ETME MANTIĞI
-        window.toggleFollow = async (targetUid, isFollowing) => {
-            const myRef = doc(db, "users", currentUser.uid);
-            const targetRef = doc(db, "users", targetUid);
-            if (isFollowing) {
-                await updateDoc(myRef, { following: arrayRemove(targetUid) });
-                await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
-            } else {
-                await updateDoc(myRef, { following: arrayUnion(targetUid) });
-                await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
-            }
-            viewUser(targetUid);
-        };
-
-        // HESAP İŞLEMLERİ
-        window.handleLogout = () => signOut(auth).then(() => location.reload());
-        window.handleDeleteAccount = async () => {
-            if (confirm("DİKKAT! Hesabın ve tüm verilerin silinecek. Emin misin?")) {
-                await deleteUser(auth.currentUser);
-                location.reload();
-            }
-        };
-
-        function loadFeed() {
-            const q = query(collection(db, "posts"), orderBy("time", "desc"));
-            onSnapshot(q, (snaps) => {
-                const feed = document.getElementById('feed');
-                feed.innerHTML = "";
-                snaps.forEach(s => {
-                    const d = s.data();
-                    feed.innerHTML += `
-                        <div class="p-4 bg-white border-b">
-                            <div class="flex items-center gap-2 mb-3" onclick="viewUser('${d.uid}')">
-                                <img src="${d.photo}" class="w-8 h-8 rounded-full">
-                                <span class="font-bold text-sm cursor-pointer">${d.name}</span>
-                            </div>
-                            <p class="text-sm">${d.text}</p>
-                            ${d.image ? `<img src="${d.image}" class="w-full rounded-xl mt-3 shadow-sm border">` : ''}
-                        </div>`;
-                });
-            });
+    window.followUser = async (targetUid, isFollowing) => {
+        const myRef = doc(db, "users", auth.currentUser.uid);
+        const targetRef = doc(db, "users", targetUid);
+        
+        if(isFollowing) {
+            await updateDoc(myRef, { following: arrayRemove(targetUid) });
+            await updateDoc(targetRef, { followers: arrayRemove(auth.currentUser.uid) });
+        } else {
+            await updateDoc(myRef, { following: arrayUnion(targetUid) });
+            await updateDoc(targetRef, { followers: arrayUnion(auth.currentUser.uid) });
         }
-    </script>
+        // Sayfayı yenilemeden verileri güncellemek için tekrar profili açıyoruz
+        currentUserData = (await getDoc(myRef)).data(); 
+        openProfile(targetUid);
+    };
+
+    window.loadMyProfile = () => openProfile(auth.currentUser.uid);
+    window.showSettings = () => {
+        if(confirm("Çıkış Yapılsın mı?")) signOut(auth).then(()=>location.reload());
+    };
+    window.editProfile = async () => {
+        const bio = prompt("Yeni bio:");
+        if(bio) {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: bio });
+            loadMyProfile();
+        }
+    };
+    window.goHome = () => switchTab('home-view', document.querySelector('.nav-btn'));
+
+    window.switchTab = (id, el) => {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(el) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            el.classList.add('active-nav');
+        }
+    };
+
+</script>
 </body>
 </html>
-
+p
