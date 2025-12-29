@@ -1,49 +1,70 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROF - Rate of Fire</title>
-    <script src="https://cdn.tailwindcss.com"></script> <style>
-        .post-card { transition: transform 0.2s; }
-        .post-card:hover { transform: translateY(-2px); }
+    <title>ROF - Rate of Fire (Beta)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .beta-badge { font-size: 10px; vertical-align: super; background: #ef4444; color: white; padding: 2px 5px; border-radius: 4px; margin-left: 2px; }
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 12px; z-index: 100; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 min-h-screen pb-20">
 
 <nav class="bg-white border-b sticky top-0 z-50 p-3 shadow-sm">
     <div class="max-w-2xl mx-auto flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-red-600 tracking-tighter">🔥 ROF</h1>
-        <div id="auth-area">
-            <button id="loginBtn" class="bg-blue-500 text-white px-4 py-2 rounded-full font-bold text-sm">Google ile Giriş</button>
+        <div class="relative">
+            <h1 class="text-3xl font-black italic text-red-600">ROF<span class="beta-badge italic font-bold">BETA</span></h1>
         </div>
-        <div id="user-area" class="hidden flex items-center gap-3">
-            <img id="userImg" class="w-8 h-8 rounded-full border" src="">
-            <button id="logoutBtn" class="text-gray-500 text-xs underline">Çıkış</button>
+        <div id="auth-controls">
+            <button id="loginBtn" class="bg-black text-white px-4 py-2 rounded-lg font-bold text-sm">Giriş Yap</button>
         </div>
     </div>
 </nav>
 
-<main class="max-w-xl mx-auto p-4">
-    <div id="post-box" class="hidden bg-white rounded-xl shadow p-4 mb-6 border border-gray-200">
-        <textarea id="captionInput" placeholder="Neler oluyor? (Ateşle!)" class="w-full border-none focus:ring-0 text-lg resize-none" rows="3"></textarea>
-        <input type="text" id="urlInput" placeholder="Görsel URL (İsteğe bağlı)" class="w-full mt-2 p-2 bg-gray-50 rounded border text-sm">
-        <div class="flex justify-end mt-3 border-t pt-3">
-            <button id="shareBtn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold hover:bg-red-600">Ateşle</button>
+<div id="registration-overlay" class="hidden fixed inset-0 bg-white z-[60] flex flex-col items-center justify-center p-6 text-center">
+    <h2 class="text-2xl font-bold mb-4">ROF Profilini Oluştur</h2>
+    <input type="text" id="reg-username" placeholder="@kullaniciadi (Değiştirilemez!)" class="border p-3 rounded-xl w-full max-w-sm mb-4">
+    <button id="saveProfileBtn" class="bg-red-500 text-white w-full max-w-sm p-3 rounded-xl font-bold">Hesabı Onayla</button>
+</div>
+
+<main id="app-content" class="max-w-xl mx-auto p-4">
+    
+    <div id="explore-section" class="mb-6">
+        <div class="relative">
+            <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+            <input type="text" placeholder="Keşfet'te ara..." class="w-full bg-gray-200 border-none rounded-full py-2 pl-10 focus:ring-2 focus:ring-red-500">
         </div>
     </div>
 
-    <div id="feed" class="space-y-4">
-        <p class="text-center text-gray-400 py-10">Yükleniyor...</p>
+    <div id="post-input-box" class="hidden bg-white rounded-2xl shadow-sm p-4 mb-6 border">
+        <textarea id="captionText" placeholder="Mermiyi sür... (Neler oluyor?)" class="w-full border-none focus:ring-0 text-lg resize-none"></textarea>
+        <input type="text" id="imgUrlInput" placeholder="Görsel URL (İsteğe bağlı)" class="w-full mt-2 p-2 bg-gray-50 rounded text-sm border-none">
+        <div class="flex justify-end mt-2 pt-2 border-t">
+            <button id="fireBtn" class="bg-red-600 text-white px-6 py-2 rounded-full font-bold">ATEŞLE</button>
+        </div>
     </div>
+
+    <div id="feed" class="space-y-6"></div>
 </main>
+
+<div class="nav-bottom">
+    <button onclick="showSection('home')"><i class="fa-solid fa-house text-xl"></i></button>
+    <button onclick="showSection('explore')"><i class="fa-solid fa-magnifying-glass text-xl"></i></button>
+    <button onclick="showSection('profile')"><i class="fa-solid fa-user text-xl"></i></button>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
+        // BURAYA KENDİ VERİLERİNİ KOY
         apiKey: "AIzaSyCTHfXRbJaUcN0ng-ik0B-N4Ai8pnnKiIk",
         authDomain: "rate-of-fire-rof.firebaseapp.com",
         projectId: "rate-of-fire-rof",
@@ -57,88 +78,105 @@
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // --- AUTH MANTIĞI ---
-    onAuthStateChanged(auth, (user) => {
+    let currentUserData = null;
+
+    // --- KULLANICI KONTROLÜ VE KAYIT ---
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            document.getElementById('auth-area').classList.add('hidden');
-            document.getElementById('user-area').classList.remove('hidden');
-            document.getElementById('post-box').classList.remove('hidden');
-            document.getElementById('userImg').src = user.photoURL;
-        } else {
-            document.getElementById('auth-area').classList.remove('hidden');
-            document.getElementById('user-area').classList.add('hidden');
-            document.getElementById('post-box').classList.add('hidden');
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                document.getElementById('registration-overlay').classList.remove('hidden');
+            } else {
+                currentUserData = userSnap.data();
+                setupUI(user);
+            }
         }
     });
 
+    document.getElementById('saveProfileBtn').onclick = async () => {
+        const username = document.getElementById('reg-username').value.trim().toLowerCase();
+        if (username.length < 3) return alert("Kullanıcı adı çok kısa!");
+
+        const user = auth.currentUser;
+        await setDoc(doc(db, "users", user.uid), {
+            username: "@" + username,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            uid: user.uid,
+            bio: "ROF Beta Kullanıcısı"
+        });
+        location.reload();
+    };
+
+    function setupUI(user) {
+        document.getElementById('post-input-box').classList.remove('hidden');
+        document.getElementById('auth-controls').innerHTML = `<button onclick="location.reload()" class="text-sm font-bold">${currentUserData.username}</button>`;
+        loadFeed();
+    }
+
     document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
-    document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
     // --- GÖNDERİ PAYLAŞMA ---
-    document.getElementById('shareBtn').onclick = async () => {
-        const user = auth.currentUser;
-        const caption = document.getElementById('captionInput').value;
-        const url = document.getElementById('urlInput').value;
-
-        if (!caption && !url) return alert("Boş gönderi atamazsın!");
+    document.getElementById('fireBtn').onclick = async () => {
+        const cap = document.getElementById('captionText').value;
+        const img = document.getElementById('imgUrlInput').value;
+        if(!cap && !img) return;
 
         await addDoc(collection(db, "posts"), {
-            uid: user.uid,
-            userName: user.displayName,
-            userPhoto: user.photoURL,
-            caption: caption,
-            imageUrl: url || null,
-            likes: [], // Beğenenlerin UID'leri burada tutulacak
+            uid: auth.currentUser.uid,
+            username: currentUserData.username,
+            userPhoto: currentUserData.photoURL,
+            caption: cap,
+            imageUrl: img || null,
+            likes: [],
             createdAt: serverTimestamp()
         });
-
-        document.getElementById('captionInput').value = "";
-        document.getElementById('urlInput').value = "";
+        document.getElementById('captionText').value = "";
+        document.getElementById('imgUrlInput').value = "";
     };
 
-    // --- AKIŞI LİSTELEME VE BEĞENİ ---
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snapshot) => {
-        const feed = document.getElementById('feed');
-        feed.innerHTML = "";
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const id = docSnap.id;
-            const isLiked = auth.currentUser && data.likes.includes(auth.currentUser.uid);
+    // --- AKIŞI YÜKLE ---
+    function loadFeed() {
+        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            snapshot.forEach(docSnap => {
+                const p = docSnap.data();
+                const id = docSnap.id;
+                const liked = p.likes.includes(auth.currentUser?.uid);
 
-            const postHTML = `
-                <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden post-card">
-                    <div class="p-3 flex items-center gap-2">
-                        <img src="${data.userPhoto}" class="w-8 h-8 rounded-full border">
-                        <span class="font-bold text-sm">${data.userName}</span>
-                    </div>
-                    ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full max-h-96 object-cover border-y">` : ''}
-                    <div class="p-4">
-                        <p class="text-gray-800 mb-3">${data.caption}</p>
-                        <div class="flex items-center gap-4">
-                            <button onclick="handleLike('${id}', ${isLiked})" class="flex items-center gap-1 ${isLiked ? 'text-red-500' : 'text-gray-500'}">
-                                <span>${isLiked ? '❤️' : '🤍'}</span>
-                                <span class="text-sm font-bold">${data.likes.length}</span>
-                            </button>
+                feed.innerHTML += `
+                    <div class="bg-white border rounded-xl overflow-hidden shadow-sm">
+                        <div class="p-3 flex items-center gap-2">
+                            <img src="${p.userPhoto}" class="w-10 h-10 rounded-full">
+                            <span class="font-bold">${p.username}</span>
+                        </div>
+                        ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full object-cover">` : ''}
+                        <div class="p-3">
+                            <p class="text-gray-800">${p.caption}</p>
+                            <div class="mt-3 flex gap-4 text-gray-500">
+                                <button onclick="like('${id}', ${liked})">${liked ? '❤️' : '🤍'} ${p.likes.length}</button>
+                                <button><i class="fa-regular fa-comment"></i> Yorum</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            feed.innerHTML += postHTML;
+                `;
+            });
         });
-    });
+    }
 
-    // BEĞENİ FONKSİYONU
-    window.handleLike = async (postId, currentlyLiked) => {
-        const user = auth.currentUser;
-        if (!user) return alert("Beğenmek için giriş yapmalısın!");
-        
-        const postRef = doc(db, "posts", postId);
-        await updateDoc(postRef, {
-            likes: currentlyLiked ? arrayRemove(user.uid) : arrayUnion(user.uid)
+    window.like = async (id, hasLiked) => {
+        const ref = doc(db, "posts", id);
+        await updateDoc(ref, {
+            likes: hasLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid)
         });
     };
+
+    window.showSection = (name) => alert(name + " sekmesi Beta aşamasında!");
+
 </script>
 </body>
 </html>
-
