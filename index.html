@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ROF FIXER</title>
+    <title>ROF ULTIMATE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -17,8 +15,13 @@
         .nav-btn.active { color: #fff; }
         .story-ring { background: linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7); padding: 2px; border-radius: 50%; }
         input, textarea { background: #111; color: white; border: 1px solid #333; }
-        /* Modal */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
+        
+        /* Modal & Overlay */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #111; width: 100%; max-width: 450px; border-radius: 16px; border: 1px solid #333; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-scroll { overflow-y: auto; padding: 16px; flex: 1; }
+        
+        canvas { display: none; } /* Gizli Canvas (Sıkıştırma için) */
     </style>
 </head>
 <body>
@@ -27,14 +30,36 @@
 
     <header class="sticky top-0 bg-black/90 backdrop-blur z-50 border-b border-gray-800 p-4 flex justify-between items-center">
         <h1 class="text-2xl font-black italic tracking-tighter cursor-pointer" onclick="switchTab('home')">ROF</h1>
-        <div id="auth-status"></div>
+        <div class="flex gap-3">
+             <i class="fa-regular fa-bell text-xl"></i>
+        </div>
     </header>
 
     <section id="view-home" class="view active">
         <div class="flex gap-4 p-4 overflow-x-auto border-b border-gray-800 scrollbar-hide">
             <div class="flex flex-col items-center min-w-[70px]">
-                <div class="story-ring"><img id="story-me" src="https://via.placeholder.com/60" class="w-16 h-16 rounded-full border-2 border-black object-cover"></div>
+                <div class="story-ring"><img id="story-me" src="" class="w-16 h-16 rounded-full border-2 border-black object-cover"></div>
                 <span class="text-xs mt-1 text-gray-400">Hikayen</span>
+            </div>
+        </div>
+
+        <div class="p-3 border-b border-gray-800 flex gap-3">
+            <img id="post-avatar" src="" class="w-10 h-10 rounded-full bg-gray-800">
+            <div class="w-full">
+                <textarea id="main-tweet-text" placeholder="Neler oluyor?" class="w-full bg-transparent border-none outline-none text-lg resize-none text-white placeholder-gray-600" rows="2"></textarea>
+                
+                <div id="preview-area" class="hidden relative mt-2 mb-2">
+                    <img id="img-preview-main" class="w-full rounded-xl border border-gray-700">
+                    <button onclick="clearImage()" class="absolute top-2 right-2 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center">✕</button>
+                </div>
+
+                <div class="flex justify-between items-center mt-2">
+                    <label class="cursor-pointer">
+                        <i class="fa-regular fa-image text-red-500 text-xl hover:text-red-400 transition"></i>
+                        <input type="file" id="file-input-main" accept="image/*" class="hidden" onchange="processImage(this)">
+                    </label>
+                    <button onclick="sharePost()" id="btn-share-main" class="bg-red-600 text-white px-5 py-1.5 rounded-full font-bold text-sm hover:bg-red-700 transition">Paylaş</button>
+                </div>
             </div>
         </div>
 
@@ -61,31 +86,31 @@
     <nav class="fixed bottom-0 w-full max-w-[500px] bg-black border-t border-gray-800 flex justify-around items-center p-4 z-50">
         <button onclick="switchTab('home', this)" class="nav-btn active"><i class="fa-solid fa-house text-2xl"></i></button>
         <button onclick="switchTab('search', this)" class="nav-btn"><i class="fa-solid fa-magnifying-glass text-2xl"></i></button>
-        <button onclick="openPostModal()" class="text-white bg-red-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transform active:scale-90 transition"><i class="fa-solid fa-plus text-2xl"></i></button>
+        <button onclick="focusPostInput()" class="text-white bg-red-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transform active:scale-90 transition"><i class="fa-solid fa-plus text-2xl"></i></button>
         <button onclick="alert('Yakında')" class="nav-btn"><i class="fa-regular fa-heart text-2xl"></i></button>
         <button onclick="loadMyProfile(true)" class="nav-btn"><img id="nav-img" src="" class="w-7 h-7 rounded-full border border-gray-600"></button>
     </nav>
 
 </div>
 
-<div id="modal-post" class="modal">
-    <div class="bg-gray-900 w-[90%] max-w-md rounded-2xl p-5 border border-gray-700 relative">
-        <button onclick="closePostModal()" class="absolute top-4 right-4 text-gray-400"><i class="fa-solid fa-xmark text-xl"></i></button>
-        <h2 class="text-white font-bold text-lg mb-4">Yeni Gönderi</h2>
+<div id="modal-detail" class="modal-overlay" onclick="closeDetailModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center p-3 border-b border-gray-800">
+            <h3 class="font-bold">Gönderi</h3>
+            <button onclick="closeDetailModal()" class="text-gray-400"><i class="fa-solid fa-xmark text-xl"></i></button>
+        </div>
         
-        <textarea id="post-text" placeholder="Ne düşünüyorsun?" class="w-full bg-black p-3 rounded-xl outline-none resize-none h-24 mb-3"></textarea>
-        
-        <label class="flex items-center gap-3 p-3 bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-700 transition mb-3">
-            <i class="fa-regular fa-image text-green-400 text-xl"></i>
-            <span id="file-label" class="text-sm text-gray-300">Fotoğraf Seç (Max 500KB)</span>
-            <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewFile()">
-        </label>
+        <div id="detail-body" class="modal-scroll">
+            </div>
 
-        <img id="img-preview" class="w-full h-48 object-cover rounded-xl mb-4 hidden border border-gray-700">
-        
-        <button onclick="sharePost()" id="btn-share" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-500">PAYLAŞ</button>
+        <div class="p-3 border-t border-gray-800 flex gap-2 bg-black">
+            <input type="text" id="comment-input" class="flex-1 bg-gray-900 border border-gray-700 rounded-full px-4 py-2 text-sm outline-none" placeholder="Yorum yap...">
+            <button id="btn-send-comment" class="text-red-500 font-bold px-2">Gönder</button>
+        </div>
     </div>
 </div>
+
+<canvas id="compress-canvas"></canvas>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
@@ -106,21 +131,19 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-    let currentUser = null;
-    let selectedImageBase64 = null;
+    let currentUserData = null;
+    let selectedImageBase64 = null; // Sıkıştırılmış resim buraya gelecek
 
-    // --- OTO TAMİR SİSTEMİ ---
+    // --- OTO TAMİR SİSTEMİ (Senin eski kodun aynısı) ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            currentUser = user;
             document.getElementById('nav-img').src = user.photoURL;
             document.getElementById('story-me').src = user.photoURL;
+            document.getElementById('post-avatar').src = user.photoURL;
             
-            // Veritabanı Kontrolü
             const userRef = doc(db, "users", user.uid);
             const snap = await getDoc(userRef);
             
-            // Eğer veri yoksa veya 'undefined' ise TAMİR ET
             if (!snap.exists() || !snap.data().name || snap.data().name === "undefined") {
                 console.log("🛠️ HESAP ONARILIYOR...");
                 await setDoc(userRef, {
@@ -131,76 +154,105 @@
                     bio: "ROF kullanıcısı.",
                     followers: [],
                     following: []
-                }, { merge: true }); // Merge true: Varsa üzerine yazar, yoksa oluşturur.
+                }, { merge: true });
+                // Sayfayı yenile ki yeni veriyle çalışsın
+                location.reload();
+            } else {
+                currentUserData = snap.data();
+                loadFeed();
             }
-            loadFeed();
         } else {
             signInWithPopup(auth, provider);
         }
     });
 
-    // --- FOTOĞRAF YÜKLEME SİSTEMİ (BASE64) ---
-    window.previewFile = () => {
-        const file = document.getElementById('post-file').files[0];
+    // --- GÖRSEL İŞLEME VE SIKIŞTIRMA (YENİ) ---
+    window.processImage = (input) => {
+        const file = input.files[0];
         if (!file) return;
 
-        // Boyut Kontrolü (500KB Limit - Firestore çökmemesi için)
-        if (file.size > 500 * 1024) {
-            alert("Dosya çok büyük! Lütfen 500KB altı bir resim seç.");
-            document.getElementById('post-file').value = "";
-            return;
-        }
-
         const reader = new FileReader();
-        reader.onloadend = () => {
-            selectedImageBase64 = reader.result;
-            const img = document.getElementById('img-preview');
-            img.src = selectedImageBase64;
-            img.classList.remove('hidden');
-            document.getElementById('file-label').innerText = "Fotoğraf Seçildi ✅";
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Canvas oluştur ve sıkıştır
+                const canvas = document.getElementById('compress-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Boyutlandırma Mantığı (Max 800px)
+                const MAX_SIZE = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Base64 Çıktı (%70 Kalite)
+                selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // Önizleme Göster
+                document.getElementById('img-preview-main').src = selectedImageBase64;
+                document.getElementById('preview-area').classList.remove('hidden');
+            };
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     };
 
-    window.sharePost = async () => {
-        const txt = document.getElementById('post-text').value;
-        if (!txt && !selectedImageBase64) return alert("Boş post atılamaz!");
+    window.clearImage = () => {
+        selectedImageBase64 = null;
+        document.getElementById('file-input-main').value = "";
+        document.getElementById('preview-area').classList.add('hidden');
+    };
 
-        document.getElementById('btn-share').innerText = "Yükleniyor...";
+    window.focusPostInput = () => {
+        switchTab('home');
+        document.getElementById('main-tweet-text').focus();
+    };
+
+    // --- PAYLAŞIM ---
+    window.sharePost = async () => {
+        const txt = document.getElementById('main-tweet-text').value;
+        if (!txt && !selectedImageBase64) return alert("İçerik girmelisin!");
+
+        const btn = document.getElementById('btn-share-main');
+        btn.innerText = "Atılıyor...";
+        btn.disabled = true;
         
         try {
-            // Kullanıcı verisini taze çek (Hata önlemek için)
-            const uSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-            const uData = uSnap.data();
-
             await addDoc(collection(db, "posts"), {
                 uid: auth.currentUser.uid,
-                name: uData.name,
-                username: uData.username,
-                photo: uData.photo,
+                name: currentUserData.name,
+                username: currentUserData.username,
+                photo: currentUserData.photo,
                 text: txt,
-                image: selectedImageBase64 || null, // Resmi buraya gömüyoruz
+                image: selectedImageBase64 || null,
                 likes: [],
+                comments: [], // Yorumlar dizisi
                 timestamp: serverTimestamp()
             });
 
-            closePostModal();
-            alert("Paylaşıldı!");
+            document.getElementById('main-tweet-text').value = "";
+            clearImage();
         } catch (error) {
             alert("Hata: " + error.message);
         } finally {
-            document.getElementById('btn-share').innerText = "PAYLAŞ";
+            btn.innerText = "Paylaş";
+            btn.disabled = false;
         }
-    };
-
-    window.openPostModal = () => document.getElementById('modal-post').style.display = 'flex';
-    window.closePostModal = () => {
-        document.getElementById('modal-post').style.display = 'none';
-        document.getElementById('post-text').value = "";
-        document.getElementById('post-file').value = "";
-        document.getElementById('img-preview').classList.add('hidden');
-        document.getElementById('file-label').innerText = "Fotoğraf Seç (Max 500KB)";
-        selectedImageBase64 = null;
     };
 
     // --- AKIŞ ---
@@ -215,61 +267,131 @@
                 const p = s.data();
                 const isLiked = p.likes && p.likes.includes(auth.currentUser.uid);
                 
-                // Feed Card
+                // Tıklayınca openDetail fonksiyonu çalışır
                 feed.innerHTML += `
-                    <div class="border-b border-gray-800 pb-4 mb-2">
-                        <div class="flex items-center gap-3 p-3" onclick="openProfile('${p.uid}')">
+                    <div class="border-b border-gray-800 pb-4 mb-2 hover:bg-gray-900/40 transition cursor-pointer" onclick="openDetail('${s.id}')">
+                        <div class="flex items-center gap-3 p-3">
                             <img src="${p.photo}" class="w-10 h-10 rounded-full border border-gray-700">
                             <div>
-                                <h4 class="font-bold text-sm text-white">${p.name}</h4>
-                                <span class="text-xs text-gray-500">${p.username}</span>
+                                <h4 class="font-bold text-sm text-white">${p.name} <span class="text-gray-500 font-normal ml-1">${p.username}</span></h4>
                             </div>
                         </div>
+                        <div class="px-3 pb-2 text-white text-sm whitespace-pre-wrap">${p.text}</div>
                         ${p.image ? `<img src="${p.image}" class="w-full max-h-[500px] object-cover bg-gray-900 border-y border-gray-800">` : ''}
-                        <div class="p-3">
-                             <div class="flex gap-4 text-2xl mb-2 text-white">
-                                <button onclick="likePost('${s.id}', ${isLiked})" class="${isLiked ? 'text-red-600' : 'text-white'}"><i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i></button>
-                                <button><i class="fa-regular fa-comment"></i></button>
-                                <button><i class="fa-regular fa-paper-plane"></i></button>
-                            </div>
-                            <p class="text-sm text-white"><span class="font-bold mr-2">${p.name}</span>${p.text}</p>
+                        <div class="px-3 pt-3 flex gap-6 text-gray-500 text-lg">
+                            <button onclick="event.stopPropagation(); likePost('${s.id}', ${isLiked})" class="${isLiked ? 'text-red-600' : 'hover:text-red-500'} flex items-center gap-1">
+                                <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i> <span class="text-xs">${p.likes ? p.likes.length : 0}</span>
+                            </button>
+                            <button class="hover:text-blue-400 flex items-center gap-1">
+                                <i class="fa-regular fa-comment"></i> <span class="text-xs">${p.comments ? p.comments.length : 0}</span>
+                            </button>
+                            <button class="hover:text-green-400"><i class="fa-regular fa-paper-plane"></i></button>
                         </div>
                     </div>`;
                 
-                // Explore Grid
-                if(p.image) grid.innerHTML += `<img src="${p.image}" onclick="openProfile('${p.uid}')" class="aspect-square object-cover w-full cursor-pointer hover:opacity-80">`;
+                if(p.image) grid.innerHTML += `<img src="${p.image}" onclick="openDetail('${s.id}')" class="aspect-square object-cover w-full cursor-pointer hover:opacity-80">`;
             });
         });
     }
+
+    // --- DETAY VE YORUM ---
+    window.openDetail = async (postId) => {
+        const modal = document.getElementById('modal-detail');
+        const body = document.getElementById('detail-body');
+        
+        modal.style.display = 'flex';
+        body.innerHTML = '<div class="p-5 text-center text-gray-500">Yükleniyor...</div>';
+
+        // Post verisini anlık dinle
+        const ref = doc(db, "posts", postId);
+        onSnapshot(ref, (snap) => {
+            if(!snap.exists()) {
+                 body.innerHTML = '<div class="p-5">Bu gönderi silinmiş.</div>';
+                 return;
+            }
+            const p = snap.data();
+            
+            // Yorumları Listele
+            let commentsHTML = "";
+            if(p.comments && p.comments.length > 0) {
+                p.comments.forEach(c => {
+                    commentsHTML += `
+                        <div class="flex gap-2 mb-3 bg-gray-900/50 p-2 rounded-lg">
+                            <b class="text-sm text-gray-300">${c.username}:</b>
+                            <span class="text-sm text-gray-400">${c.text}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                commentsHTML = `<div class="text-center text-gray-600 text-sm py-4">Henüz yorum yok. İlk yorumu sen yap!</div>`;
+            }
+
+            body.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="${p.photo}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <b class="text-white">${p.name}</b>
+                            <div class="text-xs text-gray-500">${p.username}</div>
+                        </div>
+                    </div>
+                    <p class="text-white mb-3 text-lg">${p.text}</p>
+                    ${p.image ? `<img src="${p.image}" class="w-full rounded-xl border border-gray-800 mb-4">` : ''}
+                    <div class="border-t border-gray-800 pt-4">
+                        <h4 class="text-sm font-bold text-gray-400 mb-3">Yorumlar (${p.comments ? p.comments.length : 0})</h4>
+                        ${commentsHTML}
+                    </div>
+                </div>
+            `;
+            
+            // Yorum Gönderme Butonunu Ayarla
+            document.getElementById('btn-send-comment').onclick = () => sendComment(postId);
+        });
+    };
+
+    window.closeDetailModal = () => {
+        document.getElementById('modal-detail').style.display = 'none';
+    };
+
+    window.sendComment = async (postId) => {
+        const input = document.getElementById('comment-input');
+        const val = input.value;
+        if(!val) return;
+        
+        const newComment = {
+            uid: auth.currentUser.uid,
+            username: currentUserData.name, // İsim yerine kullanıcı adı daha iyi olur
+            text: val,
+            time: Date.now()
+        };
+
+        await updateDoc(doc(db, "posts", postId), {
+            comments: arrayUnion(newComment)
+        });
+        
+        input.value = ""; // Temizle
+    };
 
     window.likePost = async (id, status) => {
         const ref = doc(db, "posts", id);
         await updateDoc(ref, { likes: status ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid) });
     };
 
-    // --- PROFİL & HESAP SİLME ---
+    // --- PROFİL SİSTEMİ ---
     window.loadMyProfile = () => openProfile(auth.currentUser.uid);
 
     window.openProfile = async (uid) => {
         switchTab('profile');
         const container = document.getElementById('profile-content');
-        container.innerHTML = `<div class="text-center mt-10 text-white">Yükleniyor...</div>`;
-
+        
         try {
             const uRef = doc(db, "users", uid);
-            let uSnap = await getDoc(uRef);
+            const uSnap = await getDoc(uRef);
             
-            // Güvenlik: Veri yoksa oluştur
-            if (!uSnap.exists()) {
-                 container.innerHTML = "Kullanıcı verisi bulunamadı. Lütfen sayfayı yenile.";
-                 return;
-            }
-            
+            if (!uSnap.exists()) return;
             const u = uSnap.data();
             const isMe = uid === auth.currentUser.uid;
-            const isFollowing = u.followers && u.followers.includes(auth.currentUser.uid);
-
-            // Post Sayısını Bul
+            
             const q = query(collection(db, "posts"), where("uid", "==", uid));
             const pSnaps = await getDocs(q);
 
@@ -279,7 +401,6 @@
                      <div class="flex gap-4 text-center text-white">
                         <div><b class="text-lg">${pSnaps.size}</b><br><span class="text-xs text-gray-500">Post</span></div>
                         <div><b class="text-lg">${u.followers ? u.followers.length : 0}</b><br><span class="text-xs text-gray-500">Takipçi</span></div>
-                        <div><b class="text-lg">${u.following ? u.following.length : 0}</b><br><span class="text-xs text-gray-500">Takip</span></div>
                      </div>
                 </div>
                 <div class="text-white mb-6">
@@ -287,38 +408,46 @@
                     <p class="text-gray-400 text-sm">${u.username}</p>
                     <p class="mt-2 text-sm">${u.bio}</p>
                 </div>
-                
                 ${isMe ? `
                     <div class="flex flex-col gap-3">
-                        <button onclick="editBio()" class="bg-gray-800 text-white py-2 rounded-lg font-bold border border-gray-700">Profili Düzenle</button>
-                        <button onclick="deleteMyAccount()" class="bg-red-900/30 text-red-500 py-2 rounded-lg font-bold border border-red-900 mt-4">⚠️ HESABI SİL</button>
-                        <button onclick="auth.signOut().then(()=>location.reload())" class="text-gray-500 text-sm mt-2">Çıkış Yap</button>
-                    </div>
-                ` : `
-                    <button onclick="followUser('${uid}', ${isFollowing})" class="w-full py-2 rounded-lg font-bold ${isFollowing ? 'bg-gray-800 text-white' : 'bg-blue-600 text-white'}">
-                        ${isFollowing ? 'Takiptesin' : 'Takip Et'}
-                    </button>
-                `}
-                
+                         <button onclick="editBio()" class="bg-gray-800 py-2 rounded-lg border border-gray-700">Profili Düzenle</button>
+                         <button onclick="deleteMyAccount()" class="text-red-500 py-2 border border-red-900 rounded-lg mt-2 bg-red-900/10">⚠️ HESABI SİL</button>
+                         <button onclick="auth.signOut().then(()=>location.reload())" class="text-gray-500 text-xs mt-2">Çıkış</button>
+                    </div>` : ''}
                 <div class="border-t border-gray-800 mt-6 pt-2 grid grid-cols-3 gap-0.5" id="profile-posts"></div>
             `;
 
             const grid = document.getElementById('profile-posts');
             pSnaps.forEach(doc => {
                 const p = doc.data();
-                if(p.image) grid.innerHTML += `<img src="${p.image}" class="aspect-square object-cover w-full border border-black">`;
+                if(p.image) grid.innerHTML += `<img src="${p.image}" onclick="openDetail('${doc.id}')" class="aspect-square object-cover w-full border border-black cursor-pointer">`;
             });
 
-        } catch (err) {
-            console.error(err);
+        } catch (err) { console.error(err); }
+    };
+
+    window.editBio = async () => {
+        const newBio = prompt("Yeni Biyografi:");
+        if(newBio) {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: newBio });
+            loadMyProfile();
         }
     };
 
-    // --- ARAMA ---
+    // --- HESAP SİLME ---
+    window.deleteMyAccount = async () => {
+        if(confirm("Tüm verilerin silinecek ve geri alınamaz. Emin misin?")) {
+            const user = auth.currentUser;
+            await deleteDoc(doc(db, "users", user.uid));
+            await deleteUser(user);
+            alert("Hesap silindi.");
+            location.reload();
+        }
+    };
+
     window.searchUser = async (val) => {
         const res = document.getElementById('search-results');
         if(val.length < 1) { res.innerHTML=""; return;}
-        
         const q = query(collection(db, "users"), where("name", ">=", val), where("name", "<=", val + '\uf8ff'));
         const snaps = await getDocs(q);
         res.innerHTML = "";
@@ -332,50 +461,6 @@
         });
     };
 
-    window.followUser = async (targetUid, isFollowing) => {
-        const myRef = doc(db, "users", auth.currentUser.uid);
-        const tRef = doc(db, "users", targetUid);
-        if(isFollowing) {
-            await updateDoc(myRef, {following: arrayRemove(targetUid)});
-            await updateDoc(tRef, {followers: arrayRemove(auth.currentUser.uid)});
-        } else {
-            await updateDoc(myRef, {following: arrayUnion(targetUid)});
-            await updateDoc(tRef, {followers: arrayUnion(auth.currentUser.uid)});
-        }
-        openProfile(targetUid);
-    };
-
-    // --- HESAP SİLME FONKSİYONU ---
-    window.deleteMyAccount = async () => {
-        const confirmMsg = prompt("Hesabını silmek için 'EVET' yaz.");
-        if (confirmMsg !== "EVET") return;
-
-        try {
-            const user = auth.currentUser;
-            // 1. Veritabanı verisini sil
-            await deleteDoc(doc(db, "users", user.uid));
-            // 2. Auth kullanıcısını sil
-            await deleteUser(user);
-            alert("Hesap başarıyla silindi. Güle güle!");
-            location.reload();
-        } catch (error) {
-            if (error.code === 'auth/requires-recent-login') {
-                alert("Güvenlik gereği: Lütfen çıkış yapıp tekrar giriş yapın, sonra silmeyi deneyin.");
-            } else {
-                alert("Hata: " + error.message);
-            }
-        }
-    };
-
-    window.editBio = async () => {
-        const newBio = prompt("Yeni biyografi:");
-        if(newBio) {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: newBio });
-            loadMyProfile();
-        }
-    }
-
-    // --- TAB YÖNETİMİ ---
     window.switchTab = (id, el) => {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById('view-'+id).classList.add('active');
